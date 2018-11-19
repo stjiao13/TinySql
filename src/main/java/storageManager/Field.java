@@ -1,4 +1,4 @@
-package storageManager;
+package main.java.storageManager;
 
 import java.io.Serializable;
 

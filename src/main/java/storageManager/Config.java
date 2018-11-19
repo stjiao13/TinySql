@@ -1,4 +1,4 @@
-package storageManager;
+package main.java.storageManager;
 
 public class Config {
 	// Therefore, a block can hold 1-8 tuples depending on the relation schema.
