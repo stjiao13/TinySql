@@ -1,5 +1,5 @@
 import java.util.ArrayList;
-import storageManager.*;
+import main.java.storageManager.*;
 
 public class TestStorageManager {
 
