@@ -1,6 +1,7 @@
 package main.java.tinySql;
 
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,13 +67,13 @@ public class Parser {
 		if (!validateSelect(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
-
+		// Pattern Matcher class from java.util.regex
 		Pattern r = Pattern.compile("SELECT\\s+(DISTINCT\\s+[a-z0-9.]*|[a-z0-9.]*)\\s+FROM\\s+([a-z0-9,\\s]*)(.*)");
 		Matcher m = r.matcher(statement);
 
 		if (m.find()) {
 			for (int i = 1; i <= m.groupCount(); i++) {
-				System.out.println("m.group(i) = " + m.group(i));
+				System.out.println("m.group("+i+")" + m.group(i));
 			}
 		}
 	}
@@ -127,6 +128,15 @@ public class Parser {
 //				System.out.println("m.group(i) = " + m.group(i));
 //
 //			}
+
+			for (int i = 0; i <= m.groupCount(); i++) {
+				System.out.println("m.group("+i+"): " + m.group(i));
+			}
+			/*
+			m.group(0): CREATE TABLE persons (id INT, name STR20, name2 STR20)
+			m.group(1): persons
+			m.group(2): id INT, name STR20, name2 STR20
+			* */
 			createNode = new CreateNode(m.group(1));
 
 			List<String[]> attribute_type_list = new ArrayList<>();
@@ -135,10 +145,16 @@ public class Parser {
 					attributes) {
 				attribute = attribute.trim();
 				String[] name_type = attribute.split("\\s+");
+				System.out.println("name_type: " + Arrays.toString(name_type));
 				attribute_type_list.add(name_type);
 			}
 			createNode.setAttribute_type_list(attribute_type_list);
 		}
+		/*
+		After above step:
+		createNode.table_name = "persons"
+		createNode.attribute_type_list = {[id, INT], [name, STR20], [name2, STR20]};
+		* */
 	}
 
 	public void parseDrop (String statement) throws ParseException{
@@ -213,14 +229,14 @@ public class Parser {
 		Parser test = new Parser();
 
 		//test select
-		try {
-
-			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-//			System.out.println("test.res = " + test.dropNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+////			System.out.println("test.res = " + test.dropNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 
 		// test drop
@@ -257,15 +273,15 @@ public class Parser {
 //		}
 //
 //
-//		// test create
-//		try {
-//
-//			test.parseCreate("CREATE TABLE persons (id INT, name STR20, name2 STR20)");
-//			System.out.println("test.res = " + test.createNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		// test create
+		try {
+
+			test.parseCreate("CREATE TABLE persons (id INT, name STR20, name2 STR20)");
+			System.out.println("test.res = " + test.createNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 		// test insert
 

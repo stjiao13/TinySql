@@ -11,7 +11,6 @@ public class CreateNode {
 	public List<String[]> attribute_type_list;
 
 
-
 	public CreateNode(String table_name) {
 		this.table_name = table_name;
 	}
