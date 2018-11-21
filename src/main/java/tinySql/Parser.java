@@ -116,6 +116,10 @@ public class Parser {
 	}
 
 	public void parseCreate (String statement) throws ParseException{
+	    /*
+	    Parse 'Create' statement
+	    ie:"CREATE TABLE persons (id INT, name STR20, name2 STR20)"
+	    * */
 		if (!validateCreate(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
@@ -123,12 +127,6 @@ public class Parser {
 		Pattern r = Pattern.compile("CREATE\\s+TABLE\\s+([a-z][a-z0-9]*)\\s+\\((.*)\\)");
 		Matcher m = r.matcher(statement);
 		if (m.find()) {
-//			for (int i = 0; i <= m.groupCount(); i++) {
-//				System.out.println("i = " + i);
-//				System.out.println("m.group(i) = " + m.group(i));
-//
-//			}
-
 			for (int i = 0; i <= m.groupCount(); i++) {
 				System.out.println("m.group("+i+"): " + m.group(i));
 			}
@@ -158,17 +156,28 @@ public class Parser {
 	}
 
 	public void parseDrop (String statement) throws ParseException{
+	    /*
+	    Parse "Drop" statement.
+	    ie: "DROP TABLE  ss12345"
+	    * */
 		if (!validateDrop(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
 		Pattern r = Pattern.compile("DROP\\s+TABLE\\s+([a-z][a-z0-9]*)");
 		Matcher m = r.matcher(statement);
 		if (m.find()) {
+            for (int i = 0; i <= m.groupCount(); i++) {
+                System.out.println("m.group("+i+"): " + m.group(i));
+            }
+            /*
+            m.group(0): DROP TABLE  ss12345
+            m.group(1): ss12345
+            * */
 			dropNode = new DropNode(m.group(1));
-//			System.out.println("m.group(0) = " + m.group(0));
-//			System.out.println("m.group(1) = " + m.group(1));
-
-
+			/*
+			After above step"
+			dropNode.table_name = "ss12345"
+			* */
 		}
 	}
 
@@ -239,17 +248,17 @@ public class Parser {
 //		}
 
 
-		// test drop
-//		try {
-//
-//			test.parseDrop("DROP TABLE  ss12345");
-////			System.out.println("t = " + test.res.type);
-////			System.out.println("test.res.getTablelist().get(0); = " + test.res.getTablelist().get(0));
-//			System.out.println("test.res = " + test.dropNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+//		 test drop
+		try {
+
+			test.parseDrop("DROP TABLE  ss12345");
+//			System.out.println("t = " + test.res.type);
+//			System.out.println("test.res.getTablelist().get(0); = " + test.res.getTablelist().get(0));
+			System.out.println("test.res = " + test.dropNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 //
 //
 //		// test delete
@@ -274,14 +283,14 @@ public class Parser {
 //
 //
 		// test create
-		try {
-
-			test.parseCreate("CREATE TABLE persons (id INT, name STR20, name2 STR20)");
-			System.out.println("test.res = " + test.createNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseCreate("CREATE TABLE persons (id INT, name STR20, name2 STR20)");
+//			System.out.println("test.res = " + test.createNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 		// test insert
 

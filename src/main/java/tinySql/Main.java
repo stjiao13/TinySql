@@ -82,7 +82,23 @@ public class Main {
     }
 
     private void dropQuery(String stmt){
-        // TODO
+        /*
+        Do "drop" action
+        1. parse query statement, get table name
+        2. drop the table(delete relation)
+        * */
+        try {
+            parser.parseDrop(stmt);
+            String tableName = parser.dropNode.table_name;
+            System.out.println(tableName);
+            schemaManager.deleteRelation(tableName);
+            // TODO
+            // pay attention: what if the table doesn't exit? catch exception?
+            // deleteRelation ERROR: relation ss12345 does not exist
+        }
+        catch (Exception e){
+            System.out.println("e= " + e);
+        }
     }
 
     private void insertQuery(String stmt){
@@ -95,8 +111,10 @@ public class Main {
 
     public static void main(String[] args){
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+        String dropStmt = "DROP TABLE  ss12345";
         Main m = new Main();
         m.exec(createStmt);
+        m.exec(dropStmt);
     }
 }
 
