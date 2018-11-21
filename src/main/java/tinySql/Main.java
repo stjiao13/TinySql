@@ -103,6 +103,51 @@ public class Main {
 
     private void insertQuery(String stmt){
         // TODO
+        /*
+        Do "insert" action
+
+        case1: without "select"
+        ie: "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)"
+        1. parse query statement, get table name and fields
+        2. create a new tuple and set fields into that tuple
+
+        case2: with "select"
+        TODO
+        * */
+        System.out.println("Insert action:");
+        try {
+            // parse insert statement
+            parser.parseInsert(stmt);
+
+            // get table name
+            String tableName = parser.insertNode.table_name;
+
+            // get relation
+            Relation relation = schemaManager.getRelation(tableName);
+            if(relation == null) return;
+
+            // create a new tuple
+            Tuple tuple = relation.createTuple();
+            Schema schema = relation.getSchema();
+
+            // get filed names and corresponding values
+            List<String> filedNames = new ArrayList<>(parser.insertNode.getAttribute_list());
+            List<String> values = new ArrayList<>(parser.insertNode.getValue_list_without_select());
+
+            // set fields into that tuple
+            for(int i = 0; i < filedNames.size(); i++){
+                String filedName = filedNames.get(i);
+                String value = values.get(i);
+                if(value.matches("^-?\\d+$")){
+                    tuple.setField(filedName, Integer.parseInt(value));
+                }else{
+                    tuple.setField(filedName, value);
+                }
+            }
+        }
+        catch (Exception e){
+            System.out.println("e= " + e);
+        }
     }
 
     private void deleteQuery(String stmt){
@@ -111,10 +156,11 @@ public class Main {
 
     public static void main(String[] args){
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-        String dropStmt = "DROP TABLE  ss12345";
+        //String dropStmt = "DROP TABLE  ss12345";
+        String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
         Main m = new Main();
         m.exec(createStmt);
-        m.exec(dropStmt);
+        m.exec(insertStmt);
     }
 }
 

@@ -64,6 +64,10 @@ public class Parser {
 
 	// parsing method
 	public void parseSelect (String statement) throws ParseException{
+	    /*
+	    Parse "Select" statement
+	    ie: "SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id"
+	    * */
 		if (!validateSelect(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
@@ -78,13 +82,17 @@ public class Parser {
 		}
 	}
 
-	public void parseDelte (String statement) throws ParseException{
+	public void parseDelete (String statement) throws ParseException{
+	    /*
+	    Parse "Delete" statement
+
+	    * */
 		if (!validateDelete(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
 		Pattern r1 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)");
 		Pattern r2 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)\\s+WHERE\\s+(.*)");
-
+        Matcher m1 = r1.matcher(statement);
 		Matcher m2 = r2.matcher(statement);
 		if (m2.find()) {
 			deleteNode = new ParseTreeNode("DELETE");
@@ -97,21 +105,25 @@ public class Parser {
 //			System.out.println("m2.group(0) = " + m2.group(0));
 //			System.out.println("m2.group(1) = " + m2.group(1));
 //			System.out.println("m2.group(2) = " + m2.group(2));
-
+            System.out.println("m2:");
+            for (int i = 1; i <= m2.groupCount(); i++) {
+                System.out.println("m.group("+i+")" + m2.group(i));
+            }
 		}
-		else {
-			Matcher m1 = r1.matcher(statement);
-			if (m1.find()) {
+		else if(m1.find()){
 
-				deleteNode = new ParseTreeNode("DELETE");
-				deleteNode.setFrom(true);
-				List<String> tablelist = new ArrayList<>();
-				tablelist.add(m1.group(1));
-				deleteNode.setTablelist(tablelist);
-
+            deleteNode = new ParseTreeNode("DELETE");
+            deleteNode.setFrom(true);
+            List<String> tablelist = new ArrayList<>();
+            tablelist.add(m1.group(1));
+            deleteNode.setTablelist(tablelist);
+            System.out.println("m1:");
+            for (int i = 1; i <= m1.groupCount(); i++) {
+                System.out.println("m.group("+i+")" + m1.group(i));
+            }
 //				System.out.println("m1.group(0) = " + m1.group(0));
 //				System.out.println("m1.group(1) = " + m1.group(1));
-			}
+
 		}
 	}
 
@@ -182,6 +194,10 @@ public class Parser {
 	}
 
 	public void parseInsert (String statement) throws ParseException{
+	    /*
+	    Parse "Insert" statement.
+	    ie: "INSERT INTO persons (id,name) VALUES (12, Jerry)"
+	    * */
 		if (!validateInsert(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
@@ -191,18 +207,19 @@ public class Parser {
 
 		if (m.find()) {
 			System.out.println(" tablename = " + m.group(1));
-			System.out.println(" attribute = " + m.group(2));
+			System.out.println(" attributes = " + m.group(2));
 			System.out.println(" other = " + m.group(3));
 
 			insertNode = new InsertNode(m.group(1));
 			String[] attributes = m.group(2).split(",");
-			List<String> ls = new ArrayList<>();
+			// ls: attributes list
+			List<String> attributeList = new ArrayList<>();
 			for (int i = 0; i < attributes.length; i++) {
-				ls.add(attributes[i].trim());
-				System.out.println("attributes = " + attributes[i].trim());
+				attributeList.add(attributes[i].trim());
+				System.out.println("attribute = " + attributes[i].trim());
 			}
 
-			insertNode.setAttribute_list(ls);
+			insertNode.setAttribute_list(attributeList);
 
 			String other = m.group(3).trim();
 			if (other.startsWith("VALUES")) {
@@ -211,6 +228,7 @@ public class Parser {
 				Matcher m2 = r2.matcher(other);
 				if (m2.find()) {
 					String[] value_arr = m2.group(1).split(",");
+					// value list
 					List<String> value_list = new ArrayList<>();
 
 					for (int i = 0; i < value_arr.length; i++) {
@@ -249,16 +267,16 @@ public class Parser {
 
 
 //		 test drop
-		try {
-
-			test.parseDrop("DROP TABLE  ss12345");
-//			System.out.println("t = " + test.res.type);
-//			System.out.println("test.res.getTablelist().get(0); = " + test.res.getTablelist().get(0));
-			System.out.println("test.res = " + test.dropNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseDrop("DROP TABLE  ss12345");
+////			System.out.println("t = " + test.res.type);
+////			System.out.println("test.res.getTablelist().get(0); = " + test.res.getTablelist().get(0));
+//			System.out.println("test.res = " + test.dropNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 //
 //
 //		// test delete
@@ -294,15 +312,15 @@ public class Parser {
 
 		// test insert
 
-//		try {
-//
-//			test.parseInsert("INSERT INTO persons (id,name) VALUES (12, Jerry)");
-//			System.out.println("test.res = " + test.insertNode);
-////			test.parseInsert("INSERT INTO persons (id,name) SELECT * FROM persons");
-//
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			test.parseInsert("INSERT INTO persons (id,name) VALUES (12, Jerry)");
+			System.out.println("test.res = " + test.insertNode);
+//			test.parseInsert("INSERT INTO persons (id,name) SELECT * FROM persons");
+
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 	}
 }
