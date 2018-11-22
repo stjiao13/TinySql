@@ -100,6 +100,31 @@ public class Main {
             System.out.println("e= " + e);
         }
     }
+    private void appendTuple(Relation relation, MainMemory mainMemory,
+                             int memoryBolckNumber, Tuple tuple){
+        /*
+        append new tuple to relation
+        * */
+        int numOfBlocks = relation.getNumOfBlocks();
+        System.out.println("number of blocks: " + numOfBlocks);
+        Block block = mainMemory.getBlock(memoryBolckNumber);
+        if(numOfBlocks == 0){
+            // relation is empty
+            block.appendTuple(tuple);
+            relation.setBlock(relation.getNumOfBlocks(), memoryBolckNumber);
+        }else{
+            relation.getBlock(relation.getNumOfBlocks() - 1, memoryBolckNumber);
+            if(block.isFull()){
+                // relation block is full
+                block.clear();
+                block.appendTuple(tuple);
+                relation.setBlock(relation.getNumOfBlocks(), memoryBolckNumber);
+            }else{
+                block.appendTuple(tuple);
+                relation.setBlock(relation.getNumOfBlocks()-1, memoryBolckNumber);
+            }
+        }
+    }
 
     private void insertQuery(String stmt){
         // TODO
@@ -144,6 +169,7 @@ public class Main {
                     tuple.setField(filedName, value);
                 }
             }
+            appendTuple(relation, mainMemory, 5, tuple);
         }
         catch (Exception e){
             System.out.println("e= " + e);
@@ -160,7 +186,10 @@ public class Main {
         String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
         Main m = new Main();
         m.exec(createStmt);
-        m.exec(insertStmt);
+        for(int i = 0; i < 4; i++){
+            m.exec(insertStmt);
+        }
+
     }
 }
 
