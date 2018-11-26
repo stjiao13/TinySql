@@ -97,7 +97,7 @@ public class Parser {
 
         // 完整版应该有多个table，构成table list。现在只考虑一个table
         String tableName = splitResult[2];
-        tableList.add(tableName);
+        tableList.add(tableName.trim());
         for(String str : attributes){
             attributeList.add(str.trim());
         }

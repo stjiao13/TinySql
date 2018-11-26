@@ -194,8 +194,8 @@ public class Main {
             String tableName = tableList.get(0);
             Relation relation = schemaManager.getRelation(tableName);
             List<String> selectedAttributes = parser.selectNode.getAttributes();
-            List<String> selectedTuples = new ArrayList<>();
-            List<String> selectedFields = new ArrayList<>();
+            List<Tuple> selectedTuples = new ArrayList<>();
+            List<Field> selectedFields = new ArrayList<>();
             if(relation == null || selectedAttributes.size() == 0){
                 // output is null
                 return;
@@ -204,7 +204,22 @@ public class Main {
             int memoryBlockNum = mainMemory.getMemorySize();
             if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
                 // "select *" case
+                List<String> fieldNameList = relation.getSchema().getFieldNames();
+                for(int i = 0; i < relationBlockNum; i++){
+                    relation.getBlock(i, 0);
+                    Block mainMemoryBlock = mainMemory.getBlock(0);
+                    if(mainMemoryBlock.getNumTuples() == 0){
+                        continue;
+                    }
+                    selectedTuples.addAll(mainMemoryBlock.getTuples());
+                }
+                // check
+                for(Tuple tuple : selectedTuples){
+                    System.out.println(tuple);
+                }
             }else{
+                // TODO
+                // "select attributes" case
 
             }
         }
@@ -217,11 +232,13 @@ public class Main {
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
         String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
+        String selectStmt = "SELECT * FROM course";
         Main m = new Main();
         m.exec(createStmt);
         for(int i = 0; i < 4; i++){
             m.exec(insertStmt);
         }
+        m.exec(selectStmt);
 
     }
 }
