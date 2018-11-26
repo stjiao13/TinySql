@@ -37,7 +37,7 @@ public class Main {
         }else if(action.equals("delete")){
             this.deleteQuery(stmt);
         }else if(action.equals("select")){
-            // TODO
+            this.selectQuery(stmt);
         }else{
             // throw exception
         }
@@ -107,9 +107,11 @@ public class Main {
         * */
         int numOfBlocks = relation.getNumOfBlocks();
         System.out.println("number of blocks: " + numOfBlocks);
+        // get main memory block
         Block block = mainMemory.getBlock(memoryBolckNumber);
         if(numOfBlocks == 0){
             // relation is empty
+            block.clear();
             block.appendTuple(tuple);
             relation.setBlock(relation.getNumOfBlocks(), memoryBolckNumber);
         }else{
@@ -178,6 +180,37 @@ public class Main {
 
     private void deleteQuery(String stmt){
         // TODO
+    }
+
+    private void selectQuery(String stmt){
+        /*
+        Do "SELECT" action
+        case 1: 先写 "select (attributes or *) from (one table)"这种情况
+        * */
+        //
+        try{
+            parser.parseSelect(stmt);
+            List<String> tableList = parser.selectNode.getTablelist();
+            String tableName = tableList.get(0);
+            Relation relation = schemaManager.getRelation(tableName);
+            List<String> selectedAttributes = parser.selectNode.getAttributes();
+            List<String> selectedTuples = new ArrayList<>();
+            List<String> selectedFields = new ArrayList<>();
+            if(relation == null || selectedAttributes.size() == 0){
+                // output is null
+                return;
+            }
+            int relationBlockNum = relation.getNumOfBlocks();
+            int memoryBlockNum = mainMemory.getMemorySize();
+            if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
+                // "select *" case
+            }else{
+
+            }
+        }
+        catch (Exception e){
+            System.out.println("e= " + e);
+        }
     }
 
     public static void main(String[] args){

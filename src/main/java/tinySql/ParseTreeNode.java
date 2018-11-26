@@ -9,13 +9,18 @@ import java.util.List;
  */
 public class ParseTreeNode {
 	public String type;
+	// type = "DELECT" or "SELECT"
 	public boolean distinct;
+	// whether stmt contains "DISTINCT"
 	public List<String> attributes;
+	// attributes (columns)
 	public boolean from;
+	// whether stmt contains "FROM"
 	public List<String> tablelist;
 	public boolean where;
+	// whether stmt contains "WHERE"
 
-	//public ExpressionTree search_condition;
+	// public ExpressionTree search_condition;
 	// use string to represent ExpressionTree
 	public String search_condition;
 	public ParseTreeNode parent;

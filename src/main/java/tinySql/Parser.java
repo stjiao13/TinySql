@@ -71,15 +71,40 @@ public class Parser {
 		if (!validateSelect(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
-		// Pattern Matcher class from java.util.regex
-		Pattern r = Pattern.compile("SELECT\\s+(DISTINCT\\s+[a-z0-9.]*|[a-z0-9.]*)\\s+FROM\\s+([a-z0-9,\\s]*)(.*)");
-		Matcher m = r.matcher(statement);
 
-		if (m.find()) {
-			for (int i = 1; i <= m.groupCount(); i++) {
-				System.out.println("m.group("+i+")" + m.group(i));
-			}
-		}
+		// Pattern Matcher class from java.util.regex
+        // 先comment掉舒童写一半的完整版
+//		Pattern r = Pattern.compile("SELECT\\s+(DISTINCT\\s+[a-z0-9.]*|[a-z0-9.]*)\\s+FROM\\s+([a-z0-9,\\s]*)(.*)");
+//		Matcher m = r.matcher(statement);
+//
+//		if (m.find()) {
+//			for (int i = 1; i <= m.groupCount(); i++) {
+//				System.out.println("m.group("+i+")" + m.group(i));
+//			}
+//		}
+
+        selectNode = new ParseTreeNode("SELECT");
+		selectNode.setFrom(true);
+
+        // 先从最简单的"select * from (one table)"开始
+        statement = statement.trim().toLowerCase();
+		//if(statement.indexOf("from") == -1) return ; //validateSelect
+
+        List<String> attributeList = new ArrayList<>();
+        List<String> tableList = new ArrayList<>();
+        String[] splitResult = statement.split("from|select");
+        String[] attributes = splitResult[1].trim().split(",");
+
+        // 完整版应该有多个table，构成table list。现在只考虑一个table
+        String tableName = splitResult[2];
+        tableList.add(tableName);
+        for(String str : attributes){
+            attributeList.add(str.trim());
+        }
+
+        selectNode.setAttributes(attributeList);
+        selectNode.setTablelist(tableList);
+
 	}
 
 	public void parseDelete (String statement) throws ParseException{
@@ -256,14 +281,15 @@ public class Parser {
 		Parser test = new Parser();
 
 		//test select
-//		try {
-//
-//			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-////			System.out.println("test.res = " + test.dropNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			//test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+			test.parseSelect("SELECT * FROM course");
+            System.out.println("test.res = " + test.selectNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 
 //		 test drop
@@ -311,16 +337,16 @@ public class Parser {
 //		}
 
 		// test insert
-
-		try {
-
-			test.parseInsert("INSERT INTO persons (id,name) VALUES (12, Jerry)");
-			System.out.println("test.res = " + test.insertNode);
-//			test.parseInsert("INSERT INTO persons (id,name) SELECT * FROM persons");
-
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//
+//		try {
+//
+//			test.parseInsert("INSERT INTO persons (id,name) VALUES (12, Jerry)");
+//			System.out.println("test.res = " + test.insertNode);
+////			test.parseInsert("INSERT INTO persons (id,name) SELECT * FROM persons");
+//
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 	}
 }
