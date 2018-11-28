@@ -7,6 +7,9 @@ import main.java.storageManager.Tuple;
 import java.util.*;
 
 class TreeNode{
+    /*
+    TreeNode class
+    * */
     String value;
     TreeNode left;
     TreeNode right;
@@ -232,10 +235,17 @@ public class ExpressionTree {
     }
 
     private boolean isInteger(String str){
+        /*
+        Whether input str matches digits regex
+        * */
         return str.matches("\\d+");
     }
 
     public String evaluate(Tuple tuple, TreeNode node){
+        /*
+        Evaluate input tuple whether satisfies the expression
+        (expression tree rooted at input node)
+        * */
         if(node == null) return null;
 
         String curOp = node.getValue();
@@ -285,8 +295,10 @@ public class ExpressionTree {
         }
     }
 
-    // print tree rooted at this node
     public String toString(TreeNode node){
+        /*
+        Inorder print the tree which rooted at this node
+        * */
         if(node == null) return "";
         String str = toString(node.left) + node.value + toString(node.right);
         return str;
