@@ -115,10 +115,12 @@ public class Parser {
 		if (!validateDelete(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
+
 		Pattern r1 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)");
 		Pattern r2 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)\\s+WHERE\\s+(.*)");
         Matcher m1 = r1.matcher(statement);
 		Matcher m2 = r2.matcher(statement);
+
 		if (m2.find()) {
 			deleteNode = new ParseTreeNode("DELETE");
 			deleteNode.setFrom(true);
@@ -136,7 +138,6 @@ public class Parser {
             }
 		}
 		else if(m1.find()){
-
             deleteNode = new ParseTreeNode("DELETE");
             deleteNode.setFrom(true);
             List<String> tablelist = new ArrayList<>();
@@ -280,16 +281,16 @@ public class Parser {
 
 		Parser test = new Parser();
 
-		//test select
-		try {
-
-			//test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-			test.parseSelect("SELECT * FROM course");
-            System.out.println("test.res = " + test.selectNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		//test select
+//		try {
+//
+//			//test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+//			test.parseSelect("SELECT * FROM course");
+//            System.out.println("test.res = " + test.selectNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 
 //		 test drop
@@ -305,16 +306,16 @@ public class Parser {
 //		}
 //
 //
-//		// test delete
-//		try {
-//
-//			test.parseDelte("DELETE FROM tablename WHERE searchcondition");
-//			System.out.println("test.res = " + test.deleteNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
-//
+		// test delete
+		try {
+
+			test.parseDelete("DELETE FROM course WHERE sid == 1");
+			System.out.println("test.res = " + test.deleteNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
+
 //
 //		try {
 //

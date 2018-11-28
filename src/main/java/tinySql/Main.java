@@ -213,7 +213,7 @@ public class Main {
                     }
                     selectedTuples.addAll(mainMemoryBlock.getTuples());
                 }
-                // check
+                // output tuples
                 for(Tuple tuple : selectedTuples){
                     System.out.println(tuple);
                 }
