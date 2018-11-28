@@ -1,9 +1,13 @@
 package main.java.tinySql;
 
+import main.java.storageManager.Field;
+import main.java.storageManager.Schema;
+import main.java.storageManager.Tuple;
+
 import java.util.*;
 
 class TreeNode{
-    public String value;
+    String value;
     TreeNode left;
     TreeNode right;
 
@@ -19,11 +23,20 @@ class TreeNode{
         this.right = right;
     }
 
-    // print tree rooted at this node
-    public String toString(TreeNode node){
-        if(node == null) return "";
-        String str = toString(node.left) + node.value + toString(node.right);
-        return str;
+    public String getValue(){
+        return value;
+    }
+
+    public TreeNode getLeft(){
+        return left;
+    }
+
+    public TreeNode getRight(){
+        return right;
+    }
+
+    public void setValue(String value){
+        this.value = value;
     }
 }
 
@@ -66,6 +79,14 @@ public class ExpressionTree {
         this.root = new TreeNode();
     }
 
+    public TreeNode getRoot(){
+        return root;
+    }
+
+    public void setRoot(TreeNode root){
+        this.root = root;
+    }
+
     public TreeNode buildTree(String str){
         /*
         construct expression tree according to grammars, +,-,*,/,(,)
@@ -88,6 +109,7 @@ public class ExpressionTree {
                     // remove "("
                     operator.pop();
                 }else{
+                    System.out.println("part: " + part);
                     int pre = preference.get(part);
                     while((!operator.isEmpty()) && (pre)<=preference.get(operator.peek())){
                         // connect tree nodes with higher preference
@@ -137,10 +159,8 @@ public class ExpressionTree {
         for(; index < str.length(); index ++){
             // trim spaces
             while(index < str.length() && Character.isSpaceChar(str.charAt(index))){
-                System.out.println("space char: " + str.charAt(index));
                 index ++;
             }
-            System.out.println("char: " + str.charAt(index));
             if(Character.isLetterOrDigit(str.charAt(index)) || str.charAt(index) == '.'){
                 StringBuilder sb = new StringBuilder();
                 // letters or digit or "a.b"
@@ -153,14 +173,12 @@ public class ExpressionTree {
                 }
                 index --;
                 String s = sb.toString();
-                System.out.println("word: " + s);
-                if(s.toLowerCase().equals("and")) words.add("&&");
-                else if(s.toLowerCase().equals("or")) words.add("||");
+                if(s.toLowerCase().equals("and")) words.add("&");
+                else if(s.toLowerCase().equals("or")) words.add("|");
                 else if(s.toLowerCase().equals("not")) words.add("!");
                 else words.add(s);
             }else{
                 // operators: + - * / = ( )
-                System.out.println("op: " + str.charAt(index));
                 words.add(String.valueOf(str.charAt(index)));
             }
         }
@@ -188,9 +206,97 @@ public class ExpressionTree {
         return false;
     }
 
+    public boolean check(Tuple tuple, TreeNode node){
+        return Boolean.parseBoolean(evaluate(tuple, node));
+    }
+
+    private String getTuple(Tuple tuple, String expression){
+        /*
+        get corresponding tuple filed value/attribute according to sub expression
+        take care of "." situation: "course.sid"
+        * */
+        List<String> filedNames = tuple.getSchema().getFieldNames();
+        int dotLoc = expression.indexOf(".");
+        for(int i = 0; i < filedNames.size(); i++){
+            // value
+            if(filedNames.get(i).equalsIgnoreCase(expression)){
+                // Field f = tuple.getField(i);
+                return tuple.getField(expression).toString();
+            }
+            if(dotLoc!=-1 && filedNames.get(i).equalsIgnoreCase(expression.substring(dotLoc+1))){
+                return tuple.getField(expression.substring(dotLoc+1)).toString();
+            }
+        }
+        // attribute
+        return expression;
+    }
+
+    private boolean isInteger(String str){
+        return str.matches("\\d+");
+    }
+
+    public String evaluate(Tuple tuple, TreeNode node){
+        if(node == null) return null;
+
+        String curOp = node.getValue();
+        String leftOp, rightOp;
+
+        leftOp = evaluate(tuple, node.getLeft());
+        rightOp = evaluate(tuple, node.getRight());
+
+        if(curOp.equals("=")){
+            if(isInteger(leftOp)) {
+                // are digits, compare values
+                return String.valueOf(Integer.parseInt(leftOp) == Integer.parseInt(rightOp));
+            } else {
+                // are strings, compare strings
+                return String.valueOf(leftOp.equalsIgnoreCase(rightOp));
+            }
+        }
+        else if(curOp.equals(">")){
+            return String.valueOf(Integer.parseInt(leftOp) > Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("<")){
+            return String.valueOf(Integer.parseInt(leftOp) < Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("+")){
+            return String.valueOf(Integer.parseInt(leftOp) + Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("-")){
+            return String.valueOf(Integer.parseInt(leftOp) - Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("*")){
+            return String.valueOf(Integer.parseInt(leftOp) * Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("/")){
+            return String.valueOf(Integer.parseInt(leftOp) / Integer.parseInt(rightOp));
+        }
+        else if(curOp.equals("&")){
+            return String.valueOf(Boolean.parseBoolean(leftOp) && Boolean.parseBoolean(rightOp));
+        }
+        else if(curOp.equals("|")){
+            return String.valueOf(Boolean.parseBoolean(leftOp) || Boolean.parseBoolean(rightOp));
+        }else{
+            if(isInteger(curOp)){
+                return curOp;
+            }else {
+                return getTuple(tuple, curOp);
+            }
+        }
+    }
+
+    // print tree rooted at this node
+    public String toString(TreeNode node){
+        if(node == null) return "";
+        String str = toString(node.left) + node.value + toString(node.right);
+        return str;
+    }
+
     public static void main(String[] args){
         String stmt = "course.sid = course2.sid AND course.exam > course2.exam";
         ExpressionTree test = new ExpressionTree();
-        System.out.println(test.split(stmt));
+        TreeNode root = test.buildTree(stmt);
+        System.out.println(root.getValue());
+        System.out.println(test.toString(root));
     }
 }
