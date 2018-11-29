@@ -2,10 +2,7 @@ package main.java.tinySql;
 
 import main.java.storageManager.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
     Parser parser;
@@ -101,29 +98,34 @@ public class Main {
         }
     }
     private void appendTuple(Relation relation, MainMemory mainMemory,
-                             int memoryBolckNumber, Tuple tuple){
+                             int memoryBlockNumber, Tuple tuple){
         /*
-        append new tuple to relation
+        append new tuple to relation：
+        1. read blocks from main memory
+        2. stores them on the disk
         * */
-        int numOfBlocks = relation.getNumOfBlocks();
-        System.out.println("number of blocks: " + numOfBlocks);
+        // total number of blocks in the relation (unlimited size)
+        int relationBlockNum = relation.getNumOfBlocks();
+        System.out.println("number of blocks: " + relationBlockNum);
         // get main memory block
-        Block block = mainMemory.getBlock(memoryBolckNumber);
-        if(numOfBlocks == 0){
+        Block block = mainMemory.getBlock(memoryBlockNumber);
+        System.out.println("main memory block: " + block);
+        if(relationBlockNum == 0){
             // relation is empty
             block.clear();
             block.appendTuple(tuple);
-            relation.setBlock(relation.getNumOfBlocks(), memoryBolckNumber);
+            // reads several blocks from the memory and stores on the disk
+            relation.setBlock(relation.getNumOfBlocks(), memoryBlockNumber);
         }else{
-            relation.getBlock(relation.getNumOfBlocks() - 1, memoryBolckNumber);
+            relation.getBlock(relation.getNumOfBlocks() - 1, memoryBlockNumber);
             if(block.isFull()){
                 // relation block is full
                 block.clear();
                 block.appendTuple(tuple);
-                relation.setBlock(relation.getNumOfBlocks(), memoryBolckNumber);
+                relation.setBlock(relation.getNumOfBlocks(), memoryBlockNumber);
             }else{
                 block.appendTuple(tuple);
-                relation.setBlock(relation.getNumOfBlocks()-1, memoryBolckNumber);
+                relation.setBlock(relation.getNumOfBlocks()-1, memoryBlockNumber);
             }
         }
     }
@@ -137,7 +139,7 @@ public class Main {
         ie: "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)"
         1. parse query statement, get table name and fields
         2. create a new tuple and set fields into that tuple
-
+        3. append tuples into the relation(disk)
         case2: with "select"
         TODO
         * */
@@ -263,34 +265,56 @@ public class Main {
             List<String> selectedAttributes = parser.selectNode.getAttributes();
             List<Tuple> selectedTuples = new ArrayList<>();
             List<Field> selectedFields = new ArrayList<>();
+            List<String> selectedFieldNames = new ArrayList<>();
             if(relation == null || selectedAttributes.size() == 0){
                 // relation doesn't exit or any attribute is selected
                 return;
             }
-            // number of tuples of this relation in disk
+            // total number of blocks in the relation (unlimited size)
             int relationBlockNum = relation.getNumOfBlocks();
-            // equals to 10
+            // total number of blocks in the memory (max:10)
             int memoryBlockNum = mainMemory.getMemorySize();
 
             if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
                 // "select *" case
-                List<String> fieldNameList = relation.getSchema().getFieldNames();
-                for(int i = 0; i < relationBlockNum; i++){
-                    relation.getBlock(i, 0);
-                    Block mainMemoryBlock = mainMemory.getBlock(0);
-                    if(mainMemoryBlock.getNumTuples() == 0){
-                        continue;
-                    }
-                    selectedTuples.addAll(mainMemoryBlock.getTuples());
-                }
-                // output tuples
-                for(Tuple tuple : selectedTuples){
-                    System.out.println(tuple);
-                }
+                selectedFieldNames = relation.getSchema().getFieldNames();
             }else{
-                // TODO
-                // "select attributes" case
+                // select attributes
+                selectedFieldNames = selectedAttributes;
 
+            }
+            for(int i = 0; i < relationBlockNum; i++){
+                // reads ONE block from the relation (the disk) and
+                // stores in the memory
+                // returns false if the index is out of bound
+                relation.getBlock(i, 0);
+                Block mainMemoryBlock = mainMemory.getBlock(0);
+                if(mainMemoryBlock.getNumTuples() == 0){
+                    continue;
+                }
+                selectedTuples.addAll(mainMemoryBlock.getTuples());
+            }
+
+            // if is distinct, then remove duplicate tuples
+            // override tuple's hashcode
+            System.out.println("is distinct: " + parser.selectNode.isDistinct());
+            if(parser.selectNode.isDistinct()){
+                Set<uniqueTuple> set = new HashSet<>();
+                int i = 0;
+                while(i < selectedTuples.size()){
+                    Tuple tuple = selectedTuples.get(i);
+                    uniqueTuple utuple = new uniqueTuple(tuple, selectedFieldNames);
+                    if(!set.add(utuple)){
+                        selectedTuples.remove(i);
+                        i --;
+                    }
+                    i++;
+                }
+            }
+
+            // output tuples
+            for(Tuple tuple : selectedTuples){
+                System.out.println("tuple: " + tuple);
             }
         }
         catch (Exception e){
@@ -302,7 +326,7 @@ public class Main {
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
         String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String selectStmt = "SELECT * FROM course";
+        String selectStmt = "SELECT distinct sid, homework, project FROM course";
         Main m = new Main();
         m.exec(createStmt);
         for(int i = 0; i < 4; i++){

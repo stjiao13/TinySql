@@ -95,8 +95,8 @@ public class Parser {
         String[] splitResult = statement.split("select|from|where");
         System.out.println("split resutls: " + Arrays.toString(splitResult));
 
-        //"[\\s]*,[\\s]*" matches a comma with multiple space neighbors
-        String[] attributes = splitResult[1].trim().replace("[\\s]*,[\\s]*","").split("\\s");
+        // split attributes
+        String[] attributes = splitResult[1].trim().replace(",", " ").split("\\s+");
 
         // set distinct
         boolean isDistinct = attributes[0].equalsIgnoreCase("distinct") ? true:false;
@@ -115,6 +115,7 @@ public class Parser {
         selectNode.setAttributes(attributeList);
 
         // set tablenames
+        // "[\\s]*,[\\s]*" matches a comma with multiple space neighbors
         String[] tableNames = splitResult[2].trim().split("[\\s]*,[\\s]*");
         System.out.println("tablenames: " + Arrays.toString(tableNames));
         for(String table:tableNames){
@@ -323,15 +324,15 @@ public class Parser {
 		Parser test = new Parser();
 
 //		//test select
-//		try {
-//
-//			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-//			//test.parseSelect("SELECT * FROM course");
-//            System.out.println("test.res = " + test.selectNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+			//test.parseSelect("SELECT * FROM course");
+            System.out.println("test.res = " + test.selectNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 
 //		 test drop
@@ -348,14 +349,14 @@ public class Parser {
 //
 //
 		// test delete
-		try {
-
-			test.parseDelete("DELETE FROM course WHERE sid == 1");
-			System.out.println("test.res = " + test.deleteNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseDelete("DELETE FROM course WHERE sid == 1");
+//			System.out.println("test.res = " + test.deleteNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 //
 //		try {
