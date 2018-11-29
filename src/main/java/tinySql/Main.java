@@ -180,7 +180,10 @@ public class Main {
 
     private void deleteQuery(String stmt){
         /*
-        Do "DELETE" action
+        Do "DELETE" action:
+        1. parser statement and get tuples which will be deleted
+        2. copy the block to memory, invalidate the tuple and write the modified
+           memory block back to the relation block R.
         * */
         try {
             parser.parseDelete(stmt);
@@ -190,16 +193,25 @@ public class Main {
             String tableName = tableList.get(0);
             Relation relation = schemaManager.getRelation(tableName);
 
-            String searchConditin = parser.deleteNode.getSearch_condition();
-
+            String searchCondition = parser.deleteNode.getSearch_condition();
+            // total number of blocks in the memory (max:10)
             int memoryBlockNum = mainMemory.getMemorySize();
+            // total number of blocks in the relation (unlimited size)
             int relationBlockNum = relation.getNumOfBlocks();
             // relation block index
+
             int curBlockIdx = 0;
+            // check all blocks of this relation by offset 0,1,2..
             while(relationBlockNum > 0){
-                // check all blocks of this relation in disk
+                // can't exceed max memory size or num of remaining blocks in disk
                 int numOfBlockToMem = Math.min(memoryBlockNum, relationBlockNum);
+                // reads several blocks from the relation (the disk) and
+                // stores in the memory
+                // returns false if the index is out of bound
                 relation.getBlocks(curBlockIdx, 0, numOfBlockToMem);
+
+                // after copy disk blocks to main memory,
+                // we can read and modify tuples
                 for(int i = 0; i < numOfBlockToMem; i++){
                     Block block = mainMemory.getBlock(i);
                     if(block.getNumTuples() == 0){
@@ -210,7 +222,7 @@ public class Main {
                     if(parser.deleteNode.isWhere()){
                         for(int j = 0; j < tuples.size(); j++){
                             // construct search condition into an expression tree
-                            ExpressionTree tree = new ExpressionTree(searchConditin);
+                            ExpressionTree tree = new ExpressionTree(searchCondition);
                             Tuple tuple = tuples.get(j);
                             if(tree.check(tuple, tree.getRoot())){
                                 // invalidate tuples which satisfy search condition
@@ -222,8 +234,9 @@ public class Main {
                         block.invalidateTuples();
                     }
                 }
+                // write modified blocks into disk
                 relation.setBlocks(curBlockIdx, 0, numOfBlockToMem);
-                numOfBlockToMem -= numOfBlockToMem;
+                relationBlockNum -= numOfBlockToMem;
                 curBlockIdx += numOfBlockToMem;
             }
         }catch (Exception e){
@@ -254,7 +267,9 @@ public class Main {
                 // relation doesn't exit or any attribute is selected
                 return;
             }
+            // number of tuples of this relation in disk
             int relationBlockNum = relation.getNumOfBlocks();
+            // equals to 10
             int memoryBlockNum = mainMemory.getMemorySize();
 
             if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
