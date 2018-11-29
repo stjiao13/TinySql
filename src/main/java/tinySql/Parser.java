@@ -92,18 +92,53 @@ public class Parser {
 
         List<String> attributeList = new ArrayList<>();
         List<String> tableList = new ArrayList<>();
-        String[] splitResult = statement.split("from|select");
-        String[] attributes = splitResult[1].trim().split(",");
+        String[] splitResult = statement.split("select|from|where");
+        System.out.println("split resutls: " + Arrays.toString(splitResult));
 
-        // 完整版应该有多个table，构成table list。现在只考虑一个table
-        String tableName = splitResult[2];
-        tableList.add(tableName.trim());
+        //"[\\s]*,[\\s]*" matches a comma with multiple space neighbors
+        String[] attributes = splitResult[1].trim().replace("[\\s]*,[\\s]*","").split("\\s");
+
+        // set distinct
+        boolean isDistinct = attributes[0].equalsIgnoreCase("distinct") ? true:false;
+        selectNode.setDistinct(isDistinct);
+        System.out.println("is distinct: " + isDistinct);
+        if(isDistinct){
+            attributes = Arrays.copyOfRange(attributes, 1, attributes.length);
+        }
+        System.out.println("attributes: " + Arrays.toString(attributes));
+
+        // set attributes
+
         for(String str : attributes){
             attributeList.add(str.trim());
         }
-
         selectNode.setAttributes(attributeList);
+
+        // set tablenames
+        String[] tableNames = splitResult[2].trim().split("[\\s]*,[\\s]*");
+        System.out.println("tablenames: " + Arrays.toString(tableNames));
+        for(String table:tableNames){
+            tableList.add(table.trim());
+        }
         selectNode.setTablelist(tableList);
+
+        /*
+        condition expression, contains search condition and order condition
+        ie: persons.id = 2 order by persons.id
+        * */
+        String condition = (splitResult.length == 3) ? "":splitResult[3].toLowerCase().trim();
+        String searchCondition, orderCondition;
+        if(condition.indexOf("order by") != -1){
+            String[] conditions = condition.split("order by");
+            searchCondition = conditions[0];
+            orderCondition = conditions[1];
+            System.out.println("order condition: " + orderCondition);
+            selectNode.setOrder_by(orderCondition);
+        }else{
+            searchCondition = condition;
+        }
+        selectNode.setSearch_condition(searchCondition);
+        System.out.println("search condition: " + condition);
 
 	}
 
@@ -282,15 +317,15 @@ public class Parser {
 		Parser test = new Parser();
 
 //		//test select
-//		try {
-//
-//			//test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-//			test.parseSelect("SELECT * FROM course");
-//            System.out.println("test.res = " + test.selectNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+			//test.parseSelect("SELECT * FROM course");
+            System.out.println("test.res = " + test.selectNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 
 //		 test drop
@@ -307,14 +342,14 @@ public class Parser {
 //
 //
 		// test delete
-		try {
-
-			test.parseDelete("DELETE FROM course WHERE sid == 1");
-			System.out.println("test.res = " + test.deleteNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseDelete("DELETE FROM course WHERE sid == 1");
+//			System.out.println("test.res = " + test.deleteNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 //
 //		try {
