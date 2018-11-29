@@ -179,7 +179,56 @@ public class Main {
     }
 
     private void deleteQuery(String stmt){
-        // TODO
+        /*
+        Do "DELETE" action
+        * */
+        try {
+            parser.parseDelete(stmt);
+
+            // get table name and corresponding relation
+            List<String> tableList = parser.deleteNode.getTablelist();
+            String tableName = tableList.get(0);
+            Relation relation = schemaManager.getRelation(tableName);
+
+            String searchConditin = parser.deleteNode.getSearch_condition();
+
+            int memoryBlockNum = mainMemory.getMemorySize();
+            int relationBlockNum = relation.getNumOfBlocks();
+            // relation block index
+            int curBlockIdx = 0;
+            while(relationBlockNum > 0){
+                // check all blocks of this relation in disk
+                int numOfBlockToMem = Math.min(memoryBlockNum, relationBlockNum);
+                relation.getBlocks(curBlockIdx, 0, numOfBlockToMem);
+                for(int i = 0; i < numOfBlockToMem; i++){
+                    Block block = mainMemory.getBlock(i);
+                    if(block.getNumTuples() == 0){
+                        // empty block
+                        continue;
+                    }
+                    List<Tuple> tuples = block.getTuples();
+                    if(parser.deleteNode.isWhere()){
+                        for(int j = 0; j < tuples.size(); j++){
+                            // construct search condition into an expression tree
+                            ExpressionTree tree = new ExpressionTree(searchConditin);
+                            Tuple tuple = tuples.get(j);
+                            if(tree.check(tuple, tree.getRoot())){
+                                // invalidate tuples which satisfy search condition
+                                block.invalidateTuple(j);
+                            }
+                        }
+                    }else{
+                        // invalidate all tuples
+                        block.invalidateTuples();
+                    }
+                }
+                relation.setBlocks(curBlockIdx, 0, numOfBlockToMem);
+                numOfBlockToMem -= numOfBlockToMem;
+                curBlockIdx += numOfBlockToMem;
+            }
+        }catch (Exception e){
+            System.out.println("e= " + e);
+        }
     }
 
     private void selectQuery(String stmt){
@@ -189,19 +238,25 @@ public class Main {
         * */
         //
         try{
+            // update select parser note
             parser.parseSelect(stmt);
+
+            // get table name and corresponding relation
             List<String> tableList = parser.selectNode.getTablelist();
             String tableName = tableList.get(0);
             Relation relation = schemaManager.getRelation(tableName);
+
+            // get selected attributes
             List<String> selectedAttributes = parser.selectNode.getAttributes();
             List<Tuple> selectedTuples = new ArrayList<>();
             List<Field> selectedFields = new ArrayList<>();
             if(relation == null || selectedAttributes.size() == 0){
-                // output is null
+                // relation doesn't exit or any attribute is selected
                 return;
             }
             int relationBlockNum = relation.getNumOfBlocks();
             int memoryBlockNum = mainMemory.getMemorySize();
+
             if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
                 // "select *" case
                 List<String> fieldNameList = relation.getSchema().getFieldNames();

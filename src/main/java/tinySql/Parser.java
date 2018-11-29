@@ -145,7 +145,6 @@ public class Parser {
 	public void parseDelete (String statement) throws ParseException{
 	    /*
 	    Parse "Delete" statement
-
 	    * */
 		if (!validateDelete(statement)) {
 			throw new ParseException("Syntax Error!",60);
@@ -156,31 +155,38 @@ public class Parser {
         Matcher m1 = r1.matcher(statement);
 		Matcher m2 = r2.matcher(statement);
 
+		// 因为match r2的也会match r1，所以要先判断r2是否match
 		if (m2.find()) {
+		    // create a new parseTreeNode
 			deleteNode = new ParseTreeNode("DELETE");
+			// set from = true
 			deleteNode.setFrom(true);
+			// fill in table name
 			List<String> tablelist = new ArrayList<>();
 			tablelist.add(m2.group(1));
 			deleteNode.setTablelist(tablelist);
+			// set "where" condition
 			deleteNode.setWhere(true);
 			deleteNode.setSearch_condition(m2.group(2));
-//			System.out.println("m2.group(0) = " + m2.group(0));
-//			System.out.println("m2.group(1) = " + m2.group(1));
-//			System.out.println("m2.group(2) = " + m2.group(2));
+
             System.out.println("m2:");
             for (int i = 1; i <= m2.groupCount(); i++) {
-                System.out.println("m.group("+i+")" + m2.group(i));
+                System.out.println("m.group("+i+"): " + m2.group(i));
             }
 		}
 		else if(m1.find()){
+		    /*
+		    similar as above but don't need to set where condition
+		    * */
             deleteNode = new ParseTreeNode("DELETE");
             deleteNode.setFrom(true);
+            deleteNode.setWhere(false);
             List<String> tablelist = new ArrayList<>();
             tablelist.add(m1.group(1));
             deleteNode.setTablelist(tablelist);
             System.out.println("m1:");
             for (int i = 1; i <= m1.groupCount(); i++) {
-                System.out.println("m.group("+i+")" + m1.group(i));
+                System.out.println("m.group("+i+"): " + m1.group(i));
             }
 //				System.out.println("m1.group(0) = " + m1.group(0));
 //				System.out.println("m1.group(1) = " + m1.group(1));
@@ -317,15 +323,15 @@ public class Parser {
 		Parser test = new Parser();
 
 //		//test select
-		try {
-
-			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-			//test.parseSelect("SELECT * FROM course");
-            System.out.println("test.res = " + test.selectNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+//			//test.parseSelect("SELECT * FROM course");
+//            System.out.println("test.res = " + test.selectNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 
 //		 test drop
@@ -342,14 +348,14 @@ public class Parser {
 //
 //
 		// test delete
-//		try {
-//
-//			test.parseDelete("DELETE FROM course WHERE sid == 1");
-//			System.out.println("test.res = " + test.deleteNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			test.parseDelete("DELETE FROM course WHERE sid == 1");
+			System.out.println("test.res = " + test.deleteNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 //
 //		try {
