@@ -325,6 +325,22 @@ public class Main {
                 }
             }
 
+            if(parser.selectNode.isOrder()){
+                // sort selected tuples by order
+                Comparator<Tuple> comp = new Comparator<Tuple>() {
+                    @Override
+                    public int compare(Tuple o1, Tuple o2) {
+                        Field field1 = o1.getField(parser.selectNode.getOrder_by());
+                        Field field2 = o2.getField(parser.selectNode.getOrder_by());
+                        if(field1.type == FieldType.STR20){
+                            return field1.str.compareTo(field2.str);
+                        }else{
+                            return ((Integer)field1.integer).compareTo((Integer)field2.integer);
+                        }
+                    }
+                };
+                Collections.sort(selectedTuples, comp);
+            }
             // output tuples
             for(Tuple tuple : selectedTuples){
                 System.out.println("tuple: " + tuple);

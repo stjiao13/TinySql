@@ -128,19 +128,25 @@ public class Parser {
         ie: persons.id = 2 order by persons.id
         * */
         String condition = (splitResult.length == 3) ? "":splitResult[3].toLowerCase().trim();
+        System.out.println("condition: " + condition);
+        if(condition.trim().equals("")){
+            selectNode.setWhere(false);
+        }else{
+            selectNode.setWhere(true);
+        }
         String searchCondition, orderCondition;
         if(condition.indexOf("order by") != -1){
+            selectNode.setHasOrder(true);
             String[] conditions = condition.split("order by");
-            searchCondition = conditions[0];
-            orderCondition = conditions[1];
+            searchCondition = conditions[0].trim();
+            orderCondition = conditions[1].trim();
             System.out.println("order condition: " + orderCondition);
             selectNode.setOrder_by(orderCondition);
         }else{
+            selectNode.setHasOrder(false);
             searchCondition = condition;
         }
         selectNode.setSearch_condition(searchCondition);
-        System.out.println("search condition: " + condition);
-
 	}
 
 	public void parseDelete (String statement) throws ParseException{

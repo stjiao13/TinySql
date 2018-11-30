@@ -16,6 +16,8 @@ public class ParseTreeNode {
     public boolean from;
     // whether stmt contains "WHERE"
     public boolean where;
+    // whether stmt contains "order by"
+    public boolean hasOrder;
     // order condition
     public String order_by;
     // public ExpressionTree search_condition;
@@ -70,6 +72,8 @@ public class ParseTreeNode {
 		return child;
 	}
 
+	public boolean isOrder() {return hasOrder;}
+
 	public String getOrder_by() {
 		return order_by;
 	}
@@ -109,6 +113,8 @@ public class ParseTreeNode {
 	public void setChild(ParseTreeNode child) {
 		this.child = child;
 	}
+
+	public void setHasOrder(boolean hasOrder) { this.hasOrder = hasOrder; }
 
 	public void setOrder_by(String order_by) {
 		this.order_by = order_by;
