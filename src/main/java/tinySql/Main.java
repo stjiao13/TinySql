@@ -292,7 +292,20 @@ public class Main {
                 if(mainMemoryBlock.getNumTuples() == 0){
                     continue;
                 }
-                selectedTuples.addAll(mainMemoryBlock.getTuples());
+
+                // select tuples which satisfy "where" condition
+                System.out.println("is where: " + parser.selectNode.isWhere());
+                if(parser.selectNode.isWhere()){
+                    for(Tuple tuple : mainMemoryBlock.getTuples()){
+                        ExpressionTree tree = new ExpressionTree(parser.selectNode.search_condition);
+                        if(tree.check(tuple, tree.getRoot())){
+                            selectedTuples.add(tuple);
+                        }
+                    }
+                }else{
+                    selectedTuples.addAll(mainMemoryBlock.getTuples());
+                }
+
             }
 
             // if is distinct, then remove duplicate tuples
