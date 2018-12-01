@@ -94,7 +94,7 @@ public class Parser {
         List<String> tableList = new ArrayList<>();
         String[] splitResult = statement.split("select|from|where");
         //
-        // System.out.println("split resutls: " + Arrays.toString(splitResult));
+        System.out.println("split resutls: " + Arrays.toString(splitResult));
 
         // split attributes
         String[] attributes = splitResult[1].trim().replace(",", " ").split("\\s+");

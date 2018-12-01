@@ -41,6 +41,18 @@ class TreeNode{
     public void setValue(String value){
         this.value = value;
     }
+
+    public TreeNode deepCopy(){
+        TreeNode left = null;
+        TreeNode right = null;
+        if(this.left != null){
+            left = this.left.deepCopy();
+        }
+        if(this.right != null){
+            right = this.right.deepCopy();
+        }
+        return new TreeNode(value, left, right);
+    }
 }
 
 public class ExpressionTree {
