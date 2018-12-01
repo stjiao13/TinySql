@@ -1,5 +1,8 @@
 package main.java.tinySql;
 
+import main.java.storageManager.Field;
+import main.java.storageManager.Tuple;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -138,6 +141,6 @@ public class Heap{
         test.insert(new HeapNode(0,1));
         test.insert(new HeapNode(1,-1));
         System.out.println(test.peek().data);
-        System.out.println(Arrays.toString(test.posArray));
+        // System.out.println(Arrays.toString(test.posArray));
     }
 }

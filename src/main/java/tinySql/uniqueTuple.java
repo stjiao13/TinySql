@@ -8,15 +8,24 @@ import java.util.List;
 
 public class uniqueTuple implements Comparable<uniqueTuple>{
     private List<Field> fields;
+    private List<String> selectedFieldNames;
 
     public uniqueTuple(Tuple tuple, List<String> selectedFieldNames){
         fields = new ArrayList<>();
+        this.selectedFieldNames = selectedFieldNames;
         for(String fieldName : selectedFieldNames){
             Field field = tuple.getField(fieldName);
             fields.add(field);
         }
     }
 
+    public List<String> getSelectedFieldNames(){
+        return selectedFieldNames;
+    }
+
+    public void setSelectedFieldNames(List<String> selectedFieldNames){
+        this.selectedFieldNames = selectedFieldNames;
+    }
     public List<Field> getFields(){
         return fields;
     }
