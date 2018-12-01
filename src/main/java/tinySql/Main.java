@@ -98,7 +98,7 @@ public class Main {
         }
     }
 
-    // change function type to public so that it could be called elsewhere
+    // change the method type to public so that it could be called elsewhere
     public void appendTuple(Relation relation, MainMemory mainMemory,
                              int memoryBlockNumber, Tuple tuple){
         /*
