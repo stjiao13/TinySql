@@ -234,10 +234,8 @@ public class ExpressionTree {
         return expression;
     }
 
+    /** Whether input str matches digits regex **/
     private boolean isInteger(String str){
-        /*
-        Whether input str matches digits regex
-        * */
         return str.matches("\\d+");
     }
 

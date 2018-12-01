@@ -93,7 +93,8 @@ public class Parser {
         List<String> attributeList = new ArrayList<>();
         List<String> tableList = new ArrayList<>();
         String[] splitResult = statement.split("select|from|where");
-        System.out.println("split resutls: " + Arrays.toString(splitResult));
+        //
+        // System.out.println("split resutls: " + Arrays.toString(splitResult));
 
         // split attributes
         String[] attributes = splitResult[1].trim().replace(",", " ").split("\\s+");
@@ -101,11 +102,11 @@ public class Parser {
         // set distinct
         boolean isDistinct = attributes[0].equalsIgnoreCase("distinct") ? true:false;
         selectNode.setDistinct(isDistinct);
-        System.out.println("is distinct: " + isDistinct);
+        // System.out.println("is distinct: " + isDistinct);
         if(isDistinct){
             attributes = Arrays.copyOfRange(attributes, 1, attributes.length);
         }
-        System.out.println("attributes: " + Arrays.toString(attributes));
+        // System.out.println("attributes: " + Arrays.toString(attributes));
 
         // set attributes
 
@@ -117,7 +118,7 @@ public class Parser {
         // set tablenames
         // "[\\s]*,[\\s]*" matches a comma with multiple space neighbors
         String[] tableNames = splitResult[2].trim().split("[\\s]*,[\\s]*");
-        System.out.println("tablenames: " + Arrays.toString(tableNames));
+        // System.out.println("tablenames: " + Arrays.toString(tableNames));
         for(String table:tableNames){
             tableList.add(table.trim());
         }
@@ -128,7 +129,7 @@ public class Parser {
         ie: persons.id = 2 order by persons.id
         * */
         String condition = (splitResult.length == 3) ? "":splitResult[3].toLowerCase().trim();
-        System.out.println("condition: " + condition);
+        // System.out.println("condition: " + condition);
         if(condition.trim().equals("")){
             selectNode.setWhere(false);
         }else{
@@ -140,7 +141,7 @@ public class Parser {
             String[] conditions = condition.split("order by");
             searchCondition = conditions[0].trim();
             orderCondition = conditions[1].trim();
-            System.out.println("order condition: " + orderCondition);
+            // System.out.println("order condition: " + orderCondition);
             selectNode.setOrder_by(orderCondition);
         }else{
             selectNode.setHasOrder(false);
@@ -176,10 +177,10 @@ public class Parser {
 			deleteNode.setWhere(true);
 			deleteNode.setSearch_condition(m2.group(2));
 
-            System.out.println("m2:");
-            for (int i = 1; i <= m2.groupCount(); i++) {
-                System.out.println("m.group("+i+"): " + m2.group(i));
-            }
+            //System.out.println("m2:");
+//            for (int i = 1; i <= m2.groupCount(); i++) {
+//                System.out.println("m.group("+i+"): " + m2.group(i));
+//            }
 		}
 		else if(m1.find()){
 		    /*
@@ -191,10 +192,10 @@ public class Parser {
             List<String> tablelist = new ArrayList<>();
             tablelist.add(m1.group(1));
             deleteNode.setTablelist(tablelist);
-            System.out.println("m1:");
-            for (int i = 1; i <= m1.groupCount(); i++) {
-                System.out.println("m.group("+i+"): " + m1.group(i));
-            }
+//            System.out.println("m1:");
+//            for (int i = 1; i <= m1.groupCount(); i++) {
+//                System.out.println("m.group("+i+"): " + m1.group(i));
+//            }
 //				System.out.println("m1.group(0) = " + m1.group(0));
 //				System.out.println("m1.group(1) = " + m1.group(1));
 
@@ -213,9 +214,9 @@ public class Parser {
 		Pattern r = Pattern.compile("CREATE\\s+TABLE\\s+([a-z][a-z0-9]*)\\s+\\((.*)\\)");
 		Matcher m = r.matcher(statement);
 		if (m.find()) {
-			for (int i = 0; i <= m.groupCount(); i++) {
-				System.out.println("m.group("+i+"): " + m.group(i));
-			}
+//			for (int i = 0; i <= m.groupCount(); i++) {
+//				System.out.println("m.group("+i+"): " + m.group(i));
+//			}
 			/*
 			m.group(0): CREATE TABLE persons (id INT, name STR20, name2 STR20)
 			m.group(1): persons
@@ -229,7 +230,7 @@ public class Parser {
 					attributes) {
 				attribute = attribute.trim();
 				String[] name_type = attribute.split("\\s+");
-				System.out.println("name_type: " + Arrays.toString(name_type));
+				// System.out.println("name_type: " + Arrays.toString(name_type));
 				attribute_type_list.add(name_type);
 			}
 			createNode.setAttribute_type_list(attribute_type_list);
@@ -252,9 +253,9 @@ public class Parser {
 		Pattern r = Pattern.compile("DROP\\s+TABLE\\s+([a-z][a-z0-9]*)");
 		Matcher m = r.matcher(statement);
 		if (m.find()) {
-            for (int i = 0; i <= m.groupCount(); i++) {
-                System.out.println("m.group("+i+"): " + m.group(i));
-            }
+//            for (int i = 0; i <= m.groupCount(); i++) {
+//                System.out.println("m.group("+i+"): " + m.group(i));
+//            }
             /*
             m.group(0): DROP TABLE  ss12345
             m.group(1): ss12345
@@ -280,9 +281,9 @@ public class Parser {
 		Matcher m = r.matcher(statement);
 
 		if (m.find()) {
-			System.out.println(" tablename = " + m.group(1));
-			System.out.println(" attributes = " + m.group(2));
-			System.out.println(" other = " + m.group(3));
+//			System.out.println(" tablename = " + m.group(1));
+//			System.out.println(" attributes = " + m.group(2));
+//			System.out.println(" other = " + m.group(3));
 
 			insertNode = new InsertNode(m.group(1));
 			String[] attributes = m.group(2).split(",");
@@ -290,14 +291,14 @@ public class Parser {
 			List<String> attributeList = new ArrayList<>();
 			for (int i = 0; i < attributes.length; i++) {
 				attributeList.add(attributes[i].trim());
-				System.out.println("attribute = " + attributes[i].trim());
+				//System.out.println("attribute = " + attributes[i].trim());
 			}
 
 			insertNode.setAttribute_list(attributeList);
 
 			String other = m.group(3).trim();
 			if (other.startsWith("VALUES")) {
-				System.out.println("values = " + other);
+				//System.out.println("values = " + other);
 				Pattern r2 = Pattern.compile("VALUES\\s+\\((.*)\\)");
 				Matcher m2 = r2.matcher(other);
 				if (m2.find()) {
@@ -313,7 +314,7 @@ public class Parser {
 				}
 			}
 			else {
-				System.out.println("select = " + other);
+				// System.out.println("select = " + other);
 				parseSelect(other);
 				insertNode.setValue_lst_with_select(selectNode);
 			}
