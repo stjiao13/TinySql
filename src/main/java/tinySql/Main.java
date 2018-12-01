@@ -87,7 +87,7 @@ public class Main {
         try {
             parser.parseDrop(stmt);
             String tableName = parser.dropNode.table_name;
-            System.out.println("Drop table: " + tableName);
+            System.out.println(tableName);
             schemaManager.deleteRelation(tableName);
             // TODO
             // pay attention: what if the table doesn't exit? catch exception?
@@ -98,6 +98,7 @@ public class Main {
         }
     }
 
+    // change the method type to public so that it could be called elsewhere
     public void appendTuple(Relation relation, MainMemory mainMemory,
                              int memoryBlockNumber, Tuple tuple){
         /*
@@ -140,9 +141,8 @@ public class Main {
         ie: "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)"
         1. parse query statement, get table name and fields
         2. create a new tuple and set fields into that tuple
-        3. append tuple into the relation(disk)
+        3. append tuples into the relation(disk)
         case2: with "select"
-        ie: "INSERT INTO course (sid,homework,project,exam,grad) SELECT * FROM course"
         TODO
         * */
         System.out.println("Insert action:");
@@ -273,13 +273,17 @@ public class Main {
            // tableList = Join.join
         }
     }
+  
     private void selectQuery1(){
         /*
         Do "SELECT" action
-        case: "select (attributes or *) from (one table)"
+        case 1: 先写 "select (attributes or *) from (one table)"这种情况
         * */
         //
         try{
+            // update select parser note
+            parser.parseSelect(stmt);
+
             // get table name and corresponding relation
             List<String> tableList = parser.selectNode.getTablelist();
             String tableName = tableList.get(0);
@@ -290,7 +294,6 @@ public class Main {
             List<Tuple> selectedTuples = new ArrayList<>();
             List<Field> selectedFields = new ArrayList<>();
             List<String> selectedFieldNames = new ArrayList<>();
-
             if(relation == null || selectedAttributes.size() == 0){
                 // relation doesn't exit or any attribute is selected
                 return;
@@ -350,51 +353,21 @@ public class Main {
                 }
             }
 
-            if(parser.selectNode.isOrder()){
-                // sort selected tuples by order
-                Comparator<Tuple> comp = new Comparator<Tuple>() {
-                    @Override
-                    public int compare(Tuple o1, Tuple o2) {
-                        Field field1 = o1.getField(parser.selectNode.getOrder_by());
-                        Field field2 = o2.getField(parser.selectNode.getOrder_by());
-                        if(field1.type == FieldType.STR20){
-                            return field1.str.compareTo(field2.str);
-                        }else{
-                            return ((Integer)field1.integer).compareTo((Integer)field2.integer);
-                        }
-                    }
-                };
-                Collections.sort(selectedTuples, comp);
+            // output tuples
+            for(Tuple tuple : selectedTuples){
+                System.out.println("tuple: " + tuple);
             }
-            outputTuples(selectedFieldNames, selectedTuples);
         }
         catch (Exception e){
             System.out.println("e= " + e);
         }
     }
 
-    private void outputTuples(List<String> selectedFieldNames, List<Tuple> selectedTuples){
-        // print tuples
-        if(selectedTuples.size() == 0){
-            System.out.println("No Tuple Found!");
-            return;
-        }
-        String sb;
-        sb = String.join("\t", selectedFieldNames) + "\n";
-        for(Tuple tuple : selectedTuples){
-            for(String attri:selectedFieldNames){
-                sb += (tuple.getField(attri) + "\t");
-            }
-            sb += "\n";
-        }
-        System.out.println(sb);
-    }
-
     public static void main(String[] args){
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
         String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String selectStmt = "SELECT sid, exam, grade FROM course";
+        String selectStmt = "SELECT distinct sid, homework, project FROM course";
         Main m = new Main();
         m.exec(createStmt);
         for(int i = 0; i < 4; i++){
