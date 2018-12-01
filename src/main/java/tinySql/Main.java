@@ -249,6 +249,32 @@ public class Main {
     }
 
     private void selectQuery(String stmt){
+        try{
+            // update select parser note
+            parser.parseSelect(stmt);
+            List<String> tableList = parser.selectNode.getTablelist();
+            System.out.println("table list: " + tableList);
+            System.out.println("selected attributes: " + parser.selectNode.getAttributes());
+            if(tableList.size() == 1){
+                selectQuery1();
+            }else{
+                selectQuery2();
+            }
+        }
+        catch (Exception e){
+            System.out.println("e= " + e);
+        }
+    }
+
+    private void selectQuery2(){
+        // TODO
+        List<String> tableList = parser.selectNode.getTablelist();
+        if(parser.selectNode.isWhere()){
+           // tableList = Join.join
+        }
+    }
+  
+    private void selectQuery1(){
         /*
         Do "SELECT" action
         case 1: 先写 "select (attributes or *) from (one table)"这种情况
