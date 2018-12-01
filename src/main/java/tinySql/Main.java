@@ -267,9 +267,10 @@ public class Main {
     }
 
     private void selectQuery2(){
+        // TODO
         List<String> tableList = parser.selectNode.getTablelist();
         if(parser.selectNode.isWhere()){
-            tableList = Join.join
+           // tableList = Join.join
         }
     }
     private void selectQuery1(){
