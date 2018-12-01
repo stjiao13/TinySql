@@ -9,6 +9,7 @@ public class Main {
     MainMemory mainMemory;
     Disk disk;
     SchemaManager schemaManager;
+    Join join;
 
     public Main(){
         parser = new Parser();
@@ -106,15 +107,18 @@ public class Main {
         1. read blocks from main memory
         2. stores them on the disk
         * */
+
         // total number of blocks in the relation (unlimited size)
         int relationBlockNum = relation.getNumOfBlocks();
         System.out.println("number of blocks: " + relationBlockNum);
         // get main memory block
         Block block = mainMemory.getBlock(memoryBlockNumber);
-        System.out.println("main memory block: " + block);
+
+        // relation is empty
         if(relationBlockNum == 0){
-            // relation is empty
+            // clear the block
             block.clear();
+            // append tuple
             block.appendTuple(tuple);
             // reads several blocks from the memory and stores on the disk
             relation.setBlock(relation.getNumOfBlocks(), memoryBlockNumber);
@@ -130,6 +134,7 @@ public class Main {
                 relation.setBlock(relation.getNumOfBlocks()-1, memoryBlockNumber);
             }
         }
+        System.out.println("main memory block: " + block);
     }
 
     private void insertQuery(String stmt){
@@ -145,7 +150,7 @@ public class Main {
         case2: with "select"
         ie: "INSERT INTO course (sid,homework,project,exam,grad) SELECT * FROM course"
         * */
-        System.out.println("Insert action:");
+        System.out.println("Insert action:" + stmt);
         try {
             // parse insert statement
             parser.parseInsert(stmt);
@@ -175,7 +180,8 @@ public class Main {
                     tuple.setField(filedName, value);
                 }
             }
-            appendTuple(relation, mainMemory, 5, tuple);
+            System.out.println("new tuple: " + tuple);
+            appendTuple(relation, mainMemory, 0, tuple);
         }
         catch (Exception e){
             System.out.println("e= " + e);
@@ -266,12 +272,25 @@ public class Main {
         }
     }
 
+    /** Select multiple talbes:
+     *  first cross join tables then use select the joined table **/
     private void selectQuery2(){
-        // TODO
         List<String> tableList = parser.selectNode.getTablelist();
+        List<String> tempTables = new ArrayList<>();
         if(parser.selectNode.isWhere()){
-           // tableList = Join.join
+            ExpressionTree tree = new ExpressionTree(parser.selectNode.search_condition);
+           tempTables = join.joinTables(this, tableList, tree);
+        }else{
+            System.out.println("query2 table list: " + tableList);
+            tempTables = join.joinTables(this, tableList);
+            System.out.println("temp tables: " + tempTables);
         }
+
+        String table = tempTables.get(tempTables.size()-1);
+        parser.selectNode.setTablelist(new ArrayList<>(Arrays.asList(table)));
+        System.out.println("new table list: " + parser.selectNode.getTablelist());
+        selectQuery1();
+        join.DropTables(this, tempTables);
     }
   
     private void selectQuery1(){
@@ -349,8 +368,8 @@ public class Main {
                 }
             }
 
+            // sort selected tuples by order
             if(parser.selectNode.isOrder()){
-                // sort selected tuples by order
                 Comparator<Tuple> comp = new Comparator<Tuple>() {
                     @Override
                     public int compare(Tuple o1, Tuple o2) {
@@ -365,7 +384,17 @@ public class Main {
                 };
                 Collections.sort(selectedTuples, comp);
             }
-
+            // handle case like "course.id"
+            if(!tableName.contains("_cross_")) {
+                List<String> new_selectedFieldNames = new ArrayList<>();
+                for(String fieldName: selectedFieldNames){
+                    if(fieldName.contains(".")){
+                        new_selectedFieldNames.add(fieldName.split("\\.")[1]);
+                    }else{
+                        new_selectedFieldNames.add(fieldName);
+                    }
+                }
+            }
             outputTuples(selectedFieldNames, selectedTuples);
         }
         catch (Exception e){
@@ -391,15 +420,19 @@ public class Main {
     }
 
     public static void main(String[] args){
-        String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+        String createStmt1 = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+        String createStmt2 = "CREATE TABLE person (id INT, name STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
-        String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String selectStmt = "SELECT distinct sid, exam, grade FROM course";
+        String insertStmt1 = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
+        String insertStmt2 = "INSERT INTO person (id, name) VALUES (2, cathy)";
+        String selectStmt = "SELECT sid, exam, grade FROM course,person";
         Main m = new Main();
-        m.exec(createStmt);
+        m.exec(createStmt1);
+        m.exec(createStmt2);
         for(int i = 0; i < 4; i++){
-            m.exec(insertStmt);
+            m.exec(insertStmt1);
         }
+        m.exec(insertStmt2);
         m.exec(selectStmt);
 
     }
