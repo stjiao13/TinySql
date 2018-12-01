@@ -87,7 +87,7 @@ public class Main {
         try {
             parser.parseDrop(stmt);
             String tableName = parser.dropNode.table_name;
-            System.out.println(tableName);
+            System.out.println("Drop tble: " + tableName);
             schemaManager.deleteRelation(tableName);
             // TODO
             // pay attention: what if the table doesn't exit? catch exception?
@@ -141,9 +141,9 @@ public class Main {
         ie: "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)"
         1. parse query statement, get table name and fields
         2. create a new tuple and set fields into that tuple
-        3. append tuples into the relation(disk)
+        3. append tuple into the relation(disk)
         case2: with "select"
-        TODO
+        ie: "INSERT INTO course (sid,homework,project,exam,grad) SELECT * FROM course"
         * */
         System.out.println("Insert action:");
         try {
@@ -277,18 +277,14 @@ public class Main {
     private void selectQuery1(){
         /*
         Do "SELECT" action
-        case 1: 先写 "select (attributes or *) from (one table)"这种情况
+        case : "select (attributes or *) from (one table)"
         * */
         //
         try{
-            // update select parser note
-            parser.parseSelect(stmt);
-
             // get table name and corresponding relation
             List<String> tableList = parser.selectNode.getTablelist();
             String tableName = tableList.get(0);
             Relation relation = schemaManager.getRelation(tableName);
-
             // get selected attributes
             List<String> selectedAttributes = parser.selectNode.getAttributes();
             List<Tuple> selectedTuples = new ArrayList<>();
@@ -353,21 +349,52 @@ public class Main {
                 }
             }
 
-            // output tuples
-            for(Tuple tuple : selectedTuples){
-                System.out.println("tuple: " + tuple);
+            if(parser.selectNode.isOrder()){
+                // sort selected tuples by order
+                Comparator<Tuple> comp = new Comparator<Tuple>() {
+                    @Override
+                    public int compare(Tuple o1, Tuple o2) {
+                        Field field1 = o1.getField(parser.selectNode.getOrder_by());
+                        Field field2 = o2.getField(parser.selectNode.getOrder_by());
+                        if(field1.type == FieldType.STR20){
+                            return field1.str.compareTo(field2.str);
+                        }else{
+                            return ((Integer)field1.integer).compareTo((Integer)field2.integer);
+                        }
+                    }
+                };
+                Collections.sort(selectedTuples, comp);
             }
+
+            outputTuples(selectedFieldNames, selectedTuples);
         }
         catch (Exception e){
             System.out.println("e= " + e);
         }
     }
 
+    private void outputTuples(List<String> selectedFieldNames, List<Tuple> selectedTuples){
+        // print tuples
+        if(selectedTuples.size() == 0){
+            System.out.println("No Tuple Found!");
+            return;
+        }
+        String sb;
+        sb = String.join("\t", selectedFieldNames) + "\n";
+        for(Tuple tuple : selectedTuples){
+            for(String attri:selectedFieldNames){
+                sb += (tuple.getField(attri) + "\t");
+            }
+            sb += "\n";
+        }
+        System.out.println(sb);
+    }
+
     public static void main(String[] args){
         String createStmt = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
         String insertStmt = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String selectStmt = "SELECT distinct sid, homework, project FROM course";
+        String selectStmt = "SELECT distinct sid, exam, grade FROM course";
         Main m = new Main();
         m.exec(createStmt);
         for(int i = 0; i < 4; i++){
