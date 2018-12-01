@@ -1,6 +1,7 @@
 package main.java.tinySql;
 
 import main.java.storageManager.Field;
+import main.java.storageManager.FieldType;
 import main.java.storageManager.Tuple;
 
 import java.util.ArrayList;
@@ -9,6 +10,24 @@ import java.util.List;
 public class uniqueTuple implements Comparable<uniqueTuple>{
     private List<Field> fields;
     private List<String> selectedFieldNames;
+    private Field key;
+
+    public uniqueTuple(){}
+
+    public uniqueTuple(Tuple tuple){
+        // distinct comparision with all field
+        fields = new ArrayList<>();
+        for(int i = 0; i < tuple.getNumOfFields(); i++){
+            fields.add(tuple.getField(i));
+        }
+    }
+
+    public uniqueTuple(Field key){
+        // distinct comparision with specified field
+        this.key = key;
+        fields = new ArrayList<>();
+        fields.add(key);
+    }
 
     public uniqueTuple(Tuple tuple, List<String> selectedFieldNames){
         fields = new ArrayList<>();
@@ -34,8 +53,12 @@ public class uniqueTuple implements Comparable<uniqueTuple>{
         this.fields = fields;
     }
 
-    public int compareTo(uniqueTuple key){
-        return 0;
+    public int compareTo(uniqueTuple tuple2){
+        if(key.type == FieldType.STR20){
+            return key.str.compareTo(tuple2.key.str);
+        }else{
+            return ((Integer)key.integer).compareTo(tuple2.key.integer);
+        }
     }
 
     // override hashcode
