@@ -7,6 +7,7 @@ import main.java.storageManager.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class uniqueTuple implements Comparable<uniqueTuple>{
     private List<Field> fields;
     private List<String> selectedFieldNames;

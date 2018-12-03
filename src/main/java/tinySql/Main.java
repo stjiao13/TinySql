@@ -2,6 +2,9 @@ package main.java.tinySql;
 
 import main.java.storageManager.*;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class Main {
@@ -18,6 +21,7 @@ public class Main {
         schemaManager = new SchemaManager(mainMemory, disk);
         disk.resetDiskIOs();
         disk.resetDiskTimer();
+        join = new Join();
     }
 
     public void exec(String stmt) {
@@ -38,6 +42,27 @@ public class Main {
             this.selectQuery(stmt);
         }else{
             // throw exception
+        }
+    }
+
+    public void parseFile(String file){
+        BufferedReader br = null;
+        try{
+            FileReader fr = new FileReader(file);
+            br = new BufferedReader(fr);
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+                exec(line);
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }finally {
+            try{
+                br.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
         }
     }
 
@@ -282,6 +307,7 @@ public class Main {
            tempTables = join.joinTables(this, tableList, tree);
         }else{
             System.out.println("query2 table list: " + tableList);
+            // stuck here
             tempTables = join.joinTables(this, tableList);
             System.out.println("temp tables: " + tempTables);
         }
@@ -419,13 +445,21 @@ public class Main {
         System.out.println(sb);
     }
 
+    public void clearMainMemory(){
+        int numOfBlocks = mainMemory.getMemorySize();
+        for(int i = 0; i < numOfBlocks; i++){
+            mainMemory.getBlock(i).clear();
+        }
+    }
+
     public static void main(String[] args){
         String createStmt1 = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-        String createStmt2 = "CREATE TABLE person (id INT, name STR20)";
+        String createStmt2 = "CREATE TABLE course2 (sid INT, exam INT, grade STR20)";
         //String dropStmt = "DROP TABLE  ss12345";
         String insertStmt1 = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String insertStmt2 = "INSERT INTO person (id, name) VALUES (2, cathy)";
-        String selectStmt = "SELECT sid, exam, grade FROM course,person";
+        String insertStmt2 = "INSERT INTO course2 (sid, exam, grade) VALUES (1, 100, A)";
+        String selectStmt1 = "SELECT * FROM course2, course";
+        String selectStmt2 = "SELECT * FROM course2";
         Main m = new Main();
         m.exec(createStmt1);
         m.exec(createStmt2);
@@ -433,8 +467,13 @@ public class Main {
             m.exec(insertStmt1);
         }
         m.exec(insertStmt2);
-        m.exec(selectStmt);
-
+        m.exec(selectStmt1);
+        m.exec(selectStmt2);
+//          Main main = new Main();
+//          long startTime = System.nanoTime();
+//          main.parseFile("test.txt");
+//          long endTime = System.nanoTime();
+//          System.out.println("Time Used: " + (endTime - startTime)/1000000000 + "s");
     }
 }
 

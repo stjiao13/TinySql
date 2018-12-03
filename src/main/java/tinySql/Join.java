@@ -2,10 +2,63 @@ package main.java.tinySql;
 
 import main.java.storageManager.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+class TupleWithBlockId{
+    public Tuple tuple;
+    public int blockId;
+    public TupleWithBlockId(Tuple tuple, int blockId){
+        this.tuple = tuple;
+        this.blockId = blockId;
+    }
+}
+
+class RelationIterator {
+    private MainMemory mainMemory;
+    private Relation relation;
+    private int memTmpBlockId;
+    private int curBlockId;
+    private Queue<Tuple> tupleQueue;
+    private int numBlocks;
+    public RelationIterator(Relation relation, MainMemory mainMemory, int memTmpBlockId) {
+        this.relation = relation;
+        this.mainMemory = mainMemory;
+        this.memTmpBlockId = memTmpBlockId;
+        this.curBlockId = -1;
+        this.tupleQueue = new LinkedList<>();
+        this.numBlocks = relation.getNumOfBlocks();
+    }
+
+    public boolean hasNext() {
+        if (!tupleQueue.isEmpty()) {
+            return true;
+        } else {
+            while (tupleQueue.isEmpty()) {
+                curBlockId++;
+                if (curBlockId >= numBlocks) {
+                    return false;
+                }
+                mainMemory.getBlock(memTmpBlockId).clear();
+                relation.getBlock(curBlockId, memTmpBlockId);
+                if (!mainMemory.getBlock(memTmpBlockId).isEmpty()) {
+                    for (Tuple tuple : mainMemory.getBlock(memTmpBlockId).getTuples()) {
+                        if (!tuple.isNull()) {
+                            tupleQueue.offer(tuple);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+    public Tuple next() {
+        if (!hasNext()) {
+            return null;
+        }
+        return tupleQueue.poll();
+    }
+}
 
 public class Join {
 
@@ -251,5 +304,326 @@ public class Join {
     /** Whether input str matches digits regex **/
     private boolean isInteger(String str){
         return str.matches("\\d+");
+    }
+
+    public String naturalJoinTwoTables(Main Phi, String table1, String table2, String condition){
+        Phi.clearMainMemory();
+        SchemaManager mngr = Phi.schemaManager;
+        Relation relation1 = mngr.getRelation(table1);
+        Relation relation2 = mngr.getRelation(table2);
+        Schema schema1 = mngr.getSchema(table1);
+        Schema schema2 = mngr.getSchema(table2);
+        String key1 = condition.split("=")[0].trim();
+        if (!schema1.getFieldNames().contains(key1) && key1.indexOf(".") != -1) {
+            key1 = key1.split("\\.")[1];
+        }
+        String key2 = condition.split("=")[1].trim();
+        if (!schema2.getFieldNames().contains(key2) && key2.indexOf(".") != -1) {
+            key2 = key2.split("\\.")[1];
+        }
+
+        String tempRelationName = table1+"natureJoin"+table2;
+        Schema tempSchema = joinTwoSchema(table1,table2,schema1,schema2);
+        Relation tempRelation = Phi.schemaManager.createRelation(tempRelationName,tempSchema);
+
+        List<String> sortFieldsOne = new ArrayList<>();
+        List<String> sortFieldsTwo = new ArrayList<>();
+        sortFieldsOne.add(key1);
+        sortFieldsTwo.add(key2);
+        twoPassSort(Phi, relation1, sortFieldsOne);
+        twoPassSort(Phi, relation2, sortFieldsTwo);
+        RelationIterator relationIterator1 = new RelationIterator(relation1, Phi.mainMemory, 0);
+        RelationIterator relationIterator2 = new RelationIterator(relation2, Phi.mainMemory, 1);
+        Tuple tuple1 = null;
+        Tuple tuple2 = null;
+        // two pointers
+        do{
+            if(tuple1 == null && tuple2 == null){
+                tuple1 = relationIterator1.next();
+                tuple2 = relationIterator2.next();
+            }
+            int compare = compareTuplesByKey(tuple1, tuple2, key1, key2);
+            if(compare < 0){
+                tuple1 = relationIterator1.next();
+            }else if(compare > 0){
+                tuple2 = relationIterator2.next();
+            }else{
+                List<Tuple> sameTupleListOne = new ArrayList<>();
+                List<Tuple> sameTupleListTwo = new ArrayList<>();
+                Tuple preTupleOne = tuple1;
+                Tuple preTupleTwo = tuple2;
+                sameTupleListOne.add(preTupleOne);
+                sameTupleListTwo.add(preTupleTwo);
+                while (tuple1 != null) {
+                    tuple1 = relationIterator1.next();
+                    if (tuple1 == null) {
+                        break;
+                    }
+                    if (compareTuplesByKey(preTupleOne, tuple1, key1, key1) == 0) {
+                        sameTupleListOne.add(tuple1);
+                    } else {
+                        break;
+                    }
+                }
+
+                while (true) {
+                    tuple2 = relationIterator2.next();
+                    if (tuple2 == null) {
+                        break;
+                    }
+                    if (compareTuplesByKey(preTupleTwo, tuple2, key2, key2) == 0) {
+                        sameTupleListTwo.add(tuple2);
+                    } else {
+                        break;
+                    }
+                }
+                for (Tuple sameTupleOne : sameTupleListOne) {
+                    for (Tuple sameTupleTwo : sameTupleListTwo) {
+                        Tuple joinedTuple = tempRelation.createTuple();
+                        joinedTuple = joinTwoTuples(sameTupleOne, sameTupleTwo, joinedTuple);
+                        if (joinedTuple == null) {
+                            continue;
+                        }
+                        Phi.appendTuple(tempRelation, Phi.mainMemory, Phi.mainMemory.getMemorySize() - 1, joinedTuple);
+                    }
+                }
+            }
+        }while(tuple1!= null && tuple2!=null);
+        return tempRelationName;
+    }
+
+    public int compareTuplesByKey(Tuple o1, Tuple o2, String key1, String key2){
+        Field field1 = o1.getField(key1);
+        Field field2 = o2.getField(key2);
+        if(field1.type == FieldType.INT){
+            return field1.integer - field2.integer;
+        }else{
+            return field1.str.compareTo(field2.str);
+        }
+    }
+
+    private void twoPassSort(Main Phi, Relation relation, List<String> sortFields){
+        int numRealBlocks = relation.getNumOfBlocks();
+        int numMemBlocks = Phi.mainMemory.getMemorySize();
+        int numSublists = (numRealBlocks % numMemBlocks == 0) ? numRealBlocks / numMemBlocks
+                : numRealBlocks / numMemBlocks + 1;
+        for(int i = 0; i < numSublists; i++){
+            Phi.clearMainMemory();
+            // 这个内部循环似乎没用
+            for (int j = 0; j < numMemBlocks; j++) {
+                int offset = i * numMemBlocks + j;
+                if (offset >= numRealBlocks) {
+                    break;
+                }
+                relation.getBlock(offset, j);
+            }
+            // sort this sublist 先用collections
+            Comparator<Tuple> comp = new Comparator<Tuple>() {
+                @Override
+                public int compare(Tuple o1, Tuple o2) {
+                    for (String sortField:sortFields){
+                        Field field1 = o1.getField(sortField);
+                        Field field2 = o2.getField(sortField);
+                        if (field1.type == FieldType.INT) {
+                            if (field1.integer != field2.integer) {
+                                return ((Integer) field1.integer).compareTo(field2.integer);
+                            }
+                        } else if (field1.type == FieldType.STR20) {
+                            if (!field1.str.equals(field2.str)) {
+                                return field1.str.compareTo(field2.str);
+                            }
+                        }
+                    }
+                    return 0;
+                }
+            };
+
+            // offer main memory tuples into heap
+            // 此时要保证main memory 所有的tuples都insert到了heap里面
+            // hacky 的方法是直接把tuple放到List里面然后collection sort
+            Heap heap = new Heap(10000, comp);
+            int count = 0;
+            for (int k = 0; k < numMemBlocks ; k++) {
+                Block block = Phi.mainMemory.getBlock(k);
+                if (!block.isEmpty() && block.getNumTuples() > 0) {
+                    for (Tuple tuple : block.getTuples()) {
+                        if (tuple.isNull()) {
+                            continue;
+                        }
+                        count ++;
+                        heap.insert(new HeapNode(count, tuple));
+                    }
+                }
+            }
+            Phi.clearMainMemory();
+            System.out.println("Begin Heap Sort");
+            //把heap 里面的tuple按照Order存回main memory
+            int memBlockIndex = 0;
+            while(!heap.isEmpty()){
+                if(Phi.mainMemory.getBlock(memBlockIndex).isFull()){
+                    memBlockIndex++;
+                }
+                Block curMemBlock = Phi.mainMemory.getBlock(memBlockIndex);
+                // heap node's data is object, need to be transferred to tuple
+                curMemBlock.appendTuple((Tuple) heap.poll().data);
+            }
+
+            // put blocks back into disk
+            for(int j = 0; j < numMemBlocks; j++){
+                int offset = numRealBlocks + i*numMemBlocks + j;
+                if(offset >= numRealBlocks*2) break;
+                relation.setBlock(offset, j);
+            }
+        }
+        System.out.println("End sorting sublists. ");
+        System.out.println("Begin merging sorted sublists");
+        // merge sorted sublists
+        int[] numTuplesRemainInBlock = new int[numSublists];
+        Comparator<TupleWithBlockId> tuplewithBlockIdComp = new Comparator<TupleWithBlockId>() {
+            @Override
+            public int compare(TupleWithBlockId o1, TupleWithBlockId o2) {
+                for (String sortField : sortFields) {
+                    Field field1 = o1.tuple.getField(sortField);
+                    Field field2 = o2.tuple.getField(sortField);
+                    if (field1.type == FieldType.INT) {
+                        if (field1.integer != field2.integer) {
+                            return ((Integer) field1.integer).compareTo(field2.integer);
+                        }
+                    } else if (field1.type == FieldType.STR20) {
+                        if (!field1.str.equals(field2.str)) {
+                            return field1.str.compareTo(field2.str);
+                        }
+                    }
+                }
+                return 0;
+            }
+        };
+        Heap tupleWithBlockIdHeap = new Heap(10000, tuplewithBlockIdComp);
+        int nodecounts = 0;
+        // add tuples of the first block into heap
+        for(int i = 0; i < numSublists; i++){
+            int offset = numRealBlocks + i*numMemBlocks;
+            Phi.mainMemory.getBlock(0).clear();
+            relation.getBlock(offset, 0);
+            Block curMemBlock = Phi.mainMemory.getBlock(0);
+            numTuplesRemainInBlock[i] = curMemBlock.getNumTuples();
+            if(curMemBlock.getNumTuples() <= 0) continue;
+            for(Tuple tuple : curMemBlock.getTuples()){
+                if(tuple.isNull()) continue;
+                TupleWithBlockId updateTuple = new TupleWithBlockId(tuple, offset);
+                tupleWithBlockIdHeap.insert(new HeapNode(nodecounts, updateTuple));
+                nodecounts ++;
+            }
+        }
+        // use heap to fill memory
+        Phi.clearMainMemory();
+        int curMemBlockId = 0;
+        int curDiskBlockId = 0;
+        int storeMemBlockId = 1;
+        boolean isLastFull = false;
+
+        while(!tupleWithBlockIdHeap.isEmpty()){
+            TupleWithBlockId curTupleWithBlockId = (TupleWithBlockId) tupleWithBlockIdHeap.poll().data;
+            int blockId = curTupleWithBlockId.blockId;
+            int sublistId = (blockId - numRealBlocks)/numMemBlocks;
+            numTuplesRemainInBlock[sublistId] --;
+            // if we have polled all tuples of a bloc, we add the next block
+            // in the sublist into heap if there is a one
+            if(numTuplesRemainInBlock[sublistId] == 0){
+                if ((blockId - numRealBlocks) % numMemBlocks != numMemBlocks - 1 && blockId + 1 < numRealBlocks * 2) {
+                    Phi.mainMemory.getBlock(curMemBlockId).clear();
+                    relation.getBlock(blockId + 1, curMemBlockId);
+                    // not empty
+                    Block curMemBlock = Phi.mainMemory.getBlock(curMemBlockId);
+                    if (!curMemBlock.isEmpty() && curMemBlock.getNumTuples() > 0) {
+                        numTuplesRemainInBlock[sublistId] = curMemBlock.getNumTuples();
+                        for (Tuple tuple : curMemBlock.getTuples()) {
+                            if (tuple.isNull()) {
+                                numTuplesRemainInBlock[sublistId]--;
+                                continue;
+                            }
+                            TupleWithBlockId newTuple = new TupleWithBlockId(tuple, blockId + 1);
+                            tupleWithBlockIdHeap.insert(new HeapNode(nodecounts,newTuple));
+                            nodecounts ++;
+                        }
+                    }
+                }
+            }
+            // use polled tuple fill a mem block and put it back to disk
+            Phi.mainMemory.getBlock(storeMemBlockId).appendTuple(curTupleWithBlockId.tuple);
+            isLastFull = false;
+            if (Phi.mainMemory.getBlock(storeMemBlockId).isFull()) {
+                relation.setBlock(curDiskBlockId, storeMemBlockId);
+                curDiskBlockId++;
+                Phi.mainMemory.getBlock(storeMemBlockId).clear();
+                // relation.setBlock(curDiskBlockId, storeMemBlockId);
+                isLastFull = true;
+            }
+        }
+        if(isLastFull){
+            relation.deleteBlocks(curDiskBlockId);
+        }else{
+            relation.deleteBlocks(curDiskBlockId+1);
+        }
+    }
+
+    public boolean isNaturalJoin(TreeNode expressionTreeNode){
+        boolean twoTable = tableRelevantToTheCondition(expressionTreeNode).size() == 2;
+        boolean operand = expressionTreeNode.getValue().equals("=");
+        if(!twoTable || operand) return false;
+        String leftKey = expressionTreeNode.getLeft().getValue().split("\\.")[1];
+        String rightKey = expressionTreeNode.getRight().getValue().split("\\.")[1];
+        return leftKey.equals(rightKey);
+    }
+
+    private List<String> tableRelevantToTheCondition(TreeNode expressionTreeNode){
+        List<String> tables = new ArrayList<>();
+        if(expressionTreeNode == null){
+            return tables;
+        }
+        String valueCurNode = expressionTreeNode.getValue();
+        String tableCurNode = getTableFromOperand(valueCurNode);
+        if(tableCurNode != null){
+            if(!tables.contains(tableCurNode)){
+                tables.add(tableCurNode);
+            }
+        }
+        tables.addAll(tableRelevantToTheCondition(expressionTreeNode.getLeft()));
+        tables.addAll(tableRelevantToTheCondition(expressionTreeNode.getRight()));
+        return tables;
+    }
+
+    private String getTableFromOperand(String str){
+        if(str == null || str.length() == 0){
+            return null;
+        }
+        if(str.indexOf(".") == -1 && isValidRelationName(str)){
+            return str;
+        }else if(str.indexOf(".") != -1){
+            String tableName = str.split("\\.")[0];
+            if(isValidRelationName(tableName)){
+                return tableName;
+            }
+        }
+        return null;
+    }
+
+    private boolean isValidRelationName(String str){
+        return str.matches("^[a-zA-Z]+[\\w\\d]*");
+    }
+
+    private boolean isValidColumnName(String str){
+        if(str.indexOf(".") != -1){
+            String[] splitResults = str.split("\\.");
+            if(splitResults.length > 2){
+                return false;
+            }else{
+                String relationName = splitResults[0];
+                String columnName = splitResults[1];
+                return isValidRelationName(relationName) && isValidRelationName(columnName);
+            }
+        }else{
+            return isValidRelationName(str);
+        }
     }
 }
