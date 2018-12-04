@@ -18,6 +18,8 @@ public class ParseTreeNode {
     public boolean where;
     // whether stmt contains "order by"
     public boolean hasOrder;
+    // whether the table is joined
+    public boolean join;
     // order condition
     public String order_by;
     // public ExpressionTree search_condition;
@@ -63,6 +65,10 @@ public class ParseTreeNode {
 	public String getSearch_condition() {
 		return search_condition;
 	}
+
+	public boolean isJoin(){ return join;}
+
+	public void setJoin(boolean join) {this.join = join;}
 
 	public ParseTreeNode getParent() {
 		return parent;

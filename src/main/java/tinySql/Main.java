@@ -25,11 +25,13 @@ public class Main {
     }
 
     public void exec(String stmt) {
+        //System.out.println("Statement: " + stmt);
         /*
         Analyse query statement then do create/drop/insert/delete/select action
         * */
         // remove duplicate spaces regex: "[\\s+]"
         String action = stmt.trim().toLowerCase().split("\\s+")[0];
+        //System.out.println("Action: " + action);
         if(action.equals("create")){
             this.createQuery(stmt);
         }else if(action.equals("drop")){
@@ -40,7 +42,7 @@ public class Main {
             this.deleteQuery(stmt);
         }else if(action.equals("select")){
             this.selectQuery(stmt);
-        }else{
+        }else {
             // throw exception
         }
     }
@@ -97,7 +99,7 @@ public class Main {
             String tableName = parser.createNode.table_name;
             Schema schema = createSchema(schemaMap);
             schemaManager.createRelation(tableName, schema);
-            System.out.println("output: " + parser.createNode);
+            //System.out.println("output: " + parser.createNode);
         }
         catch (Exception e) {
             System.out.println("e = " + e);
@@ -113,7 +115,7 @@ public class Main {
         try {
             parser.parseDrop(stmt);
             String tableName = parser.dropNode.table_name;
-            System.out.println("Drop tble: " + tableName);
+            //System.out.println("Drop tble: " + tableName);
             schemaManager.deleteRelation(tableName);
             // TODO
             // pay attention: what if the table doesn't exit? catch exception?
@@ -132,13 +134,15 @@ public class Main {
         1. read blocks from main memory
         2. stores them on the disk
         * */
-
+//        System.out.println("tuple to be appendedd: " + tuple);
+//        System.out.println("before: \n" + relation.toString());
         // total number of blocks in the relation (unlimited size)
         int relationBlockNum = relation.getNumOfBlocks();
-        System.out.println("number of blocks: " + relationBlockNum);
+//        System.out.println("number of blocks: " + relationBlockNum);
         // get main memory block
         Block block = mainMemory.getBlock(memoryBlockNumber);
-
+//        System.out.println("current main memory block: " + block);
+//        System.out.println("num of blocks in relation: " + relationBlockNum);
         // relation is empty
         if(relationBlockNum == 0){
             // clear the block
@@ -148,18 +152,28 @@ public class Main {
             // reads several blocks from the memory and stores on the disk
             relation.setBlock(relation.getNumOfBlocks(), memoryBlockNumber);
         }else{
+//            System.out.println("Block is full: " + block.isFull());
+            // reads one block from the relation (the disk) and
+            // stores in the memory
+            // returns false if the index is out of bound
             relation.getBlock(relation.getNumOfBlocks() - 1, memoryBlockNumber);
             if(block.isFull()){
                 // relation block is full
                 block.clear();
+//                System.out.println("cleared main memory block: " + mainMemory.getBlock(memoryBlockNumber));
                 block.appendTuple(tuple);
+                mainMemory.setBlock(memoryBlockNumber, block);
+//                System.out.println("appended main memory block: " + mainMemory.getBlock(memoryBlockNumber));
                 relation.setBlock(relation.getNumOfBlocks(), memoryBlockNumber);
             }else{
                 block.appendTuple(tuple);
+                mainMemory.setBlock(memoryBlockNumber, block);
+//                System.out.println("updated block: " + block);
                 relation.setBlock(relation.getNumOfBlocks()-1, memoryBlockNumber);
             }
         }
-        System.out.println("main memory block: " + block);
+//        System.out.println("after: \n" + relation.toString());
+//        System.out.println("main memory block: " + block);
     }
 
     private void insertQuery(String stmt){
@@ -175,8 +189,9 @@ public class Main {
         case2: with "select"
         ie: "INSERT INTO course (sid,homework,project,exam,grad) SELECT * FROM course"
         * */
-        System.out.println("Insert action:" + stmt);
+        //System.out.println("Insert action:" + stmt);
         try {
+
             // parse insert statement
             parser.parseInsert(stmt);
 
@@ -186,6 +201,61 @@ public class Main {
             // get relation
             Relation relation = schemaManager.getRelation(tableName);
             if(relation == null) return;
+
+            // System.out.println("table name: " + tableName);
+            // System.out.println("select: " + parser.insertNode.value_lst_with_select);
+            // handle the case with "select" in insert query
+            // ie: INSERT INTO course (sid, homework, project, exam, grade) SELECT * FROM course
+            if(parser.insertNode.value_lst_with_select != null ){
+                String tableFrom = parser.insertNode.value_lst_with_select.getTablelist().get(0);
+                // System.out.println("From table: " + tableFrom);
+                Relation relationFrom = schemaManager.getRelation(tableFrom);
+                // attributes selected from "selected from" table
+                List<String> selectedAttributes = parser.insertNode.value_lst_with_select.getAttributes();
+                List<Tuple> selectedTuples = new ArrayList<>();
+
+                if(selectedAttributes.size() == 0) return;
+                clearMainMemory();
+                // number of blocks in "insert to" relation
+                int relationNumOfBlocks = relationFrom.getNumOfBlocks();
+                int memoryNumOfBlocks = mainMemory.getMemorySize();
+                List<String> selectedFieldNames = new ArrayList<>();
+                if(selectedAttributes.size() == 1 && selectedAttributes.get(0).equals("*")){
+                    selectedFieldNames = relationFrom.getSchema().getFieldNames();
+                }else{
+                    selectedFieldNames = selectedAttributes;
+                }
+                // TODO with DISTINCT/ORDER condition
+                // Now cover Where clause
+                for(int i = 0; i < relationNumOfBlocks; i++){
+                    mainMemory.getBlock(0).clear();
+                    relationFrom.getBlock(i, 0);
+                    Block mainMemoryBlock = mainMemory.getBlock(0);
+                    if(mainMemoryBlock.getNumTuples() == 0) continue;
+                    for(Tuple tuple : mainMemoryBlock.getTuples()) {
+                        if(parser.insertNode.value_lst_with_select.isWhere()){
+                            ExpressionTree et = new ExpressionTree(parser.insertNode.value_lst_with_select.getSearch_condition());
+                            if(!et.check(tuple, et.getRoot())) continue;
+                        }
+                        // create an empty tuple
+                        Tuple newTuple = relation.createTuple();
+                        // copy selected tuple's field values to new tuple
+                        for(int j = 0; j < selectedFieldNames.size(); j++){
+                            Field curField = tuple.getField(selectedFieldNames.get(j));
+                            if(curField.type == FieldType.INT){
+                                newTuple.setField(selectedFieldNames.get(j), curField.integer);
+                            }else{
+                                newTuple.setField(selectedFieldNames.get(j), curField.str);
+                            }
+                        }
+                        // append new tuple to relation
+                        // System.out.println("new tuple: " + newTuple);
+                        appendTuple(relation, mainMemory, 0, newTuple);
+                    }
+                }
+                return;
+            }
+
 
             // create a new tuple
             Tuple tuple = relation.createTuple();
@@ -205,7 +275,7 @@ public class Main {
                     tuple.setField(filedName, value);
                 }
             }
-            System.out.println("new tuple: " + tuple);
+            //System.out.println("new tuple: " + tuple);
             appendTuple(relation, mainMemory, 0, tuple);
         }
         catch (Exception e){
@@ -254,18 +324,25 @@ public class Main {
                         continue;
                     }
                     List<Tuple> tuples = block.getTuples();
+                    //System.out.println("delete is where: " + parser.deleteNode.isWhere());
                     if(parser.deleteNode.isWhere()){
                         for(int j = 0; j < tuples.size(); j++){
                             // construct search condition into an expression tree
+                            //System.out.println("where condition: " + searchCondition);
                             ExpressionTree tree = new ExpressionTree(searchCondition);
+                            //System.out.println("E tree: " + tree.toString(tree.getRoot()));
                             Tuple tuple = tuples.get(j);
+                            //System.out.println("current tuple: " + tuple);
+                            //System.out.println("whether satisfy where condition: " + tree.check(tuple, tree.getRoot()));
                             if(tree.check(tuple, tree.getRoot())){
+                                //System.out.println("Tuple to be invalidated: " + tuple);
                                 // invalidate tuples which satisfy search condition
                                 block.invalidateTuple(j);
                             }
                         }
                     }else{
                         // invalidate all tuples
+                        //System.out.println("Block to be invalidated: " + block);
                         block.invalidateTuples();
                     }
                 }
@@ -284,8 +361,8 @@ public class Main {
             // update select parser note
             parser.parseSelect(stmt);
             List<String> tableList = parser.selectNode.getTablelist();
-            System.out.println("table list: " + tableList);
-            System.out.println("selected attributes: " + parser.selectNode.getAttributes());
+            //System.out.println("table list: " + tableList);
+            //System.out.println("selected attributes: " + parser.selectNode.getAttributes());
             if(tableList.size() == 1){
                 selectQuery1();
             }else{
@@ -306,23 +383,22 @@ public class Main {
             ExpressionTree tree = new ExpressionTree(parser.selectNode.search_condition);
            tempTables = join.joinTables(this, tableList, tree);
         }else{
-            System.out.println("query2 table list: " + tableList);
-            // stuck here
+            //System.out.println("query2 table list: " + tableList);
             tempTables = join.joinTables(this, tableList);
-            System.out.println("temp tables: " + tempTables);
+            //System.out.println("temp tables: " + tempTables);
         }
 
         String table = tempTables.get(tempTables.size()-1);
         parser.selectNode.setTablelist(new ArrayList<>(Arrays.asList(table)));
-        System.out.println("new table list: " + parser.selectNode.getTablelist());
+        //System.out.println("new table list: " + parser.selectNode.getTablelist());
         selectQuery1();
         join.DropTables(this, tempTables);
     }
   
     private void selectQuery1(){
         /*
-        Do "SELECT" action
-        case : "select (attributes or *) from (one table)"
+        Do "SELECT" action on only one table
+        case : "select [distinct] (attributes or *) from (one table) where []"
         * */
         //
         try{
@@ -333,7 +409,7 @@ public class Main {
             // get selected attributes
             List<String> selectedAttributes = parser.selectNode.getAttributes();
             List<Tuple> selectedTuples = new ArrayList<>();
-            List<Field> selectedFields = new ArrayList<>();
+            // selected fields which will be printed out
             List<String> selectedFieldNames = new ArrayList<>();
             if(relation == null || selectedAttributes.size() == 0){
                 // relation doesn't exit or any attribute is selected
@@ -352,6 +428,14 @@ public class Main {
                 selectedFieldNames = selectedAttributes;
 
             }
+
+            if(!parser.selectNode.isDistinct() && !parser.selectNode.isOrder()){
+                show(parser.selectNode, relation, selectedFieldNames);
+                return;
+            }
+
+            // TODO: single table one pass and two pass optimization
+
             for(int i = 0; i < relationBlockNum; i++){
                 // reads ONE block from the relation (the disk) and
                 // stores in the memory
@@ -363,7 +447,7 @@ public class Main {
                 }
 
                 // select tuples which satisfy "where" condition
-                System.out.println("is where: " + parser.selectNode.isWhere());
+                //System.out.println("is where: " + parser.selectNode.isWhere());
                 if(parser.selectNode.isWhere()){
                     for(Tuple tuple : mainMemoryBlock.getTuples()){
                         ExpressionTree tree = new ExpressionTree(parser.selectNode.search_condition);
@@ -377,9 +461,9 @@ public class Main {
 
             }
 
-            // if is distinct, then remove duplicate tuples
+            // if is distinct, then eliminate duplicate tuples
             // override tuple's hashcode
-            System.out.println("is distinct: " + parser.selectNode.isDistinct());
+            //System.out.println("is distinct: " + parser.selectNode.isDistinct());
             if(parser.selectNode.isDistinct()){
                 Set<uniqueTuple> set = new HashSet<>();
                 int i = 0;
@@ -421,28 +505,127 @@ public class Main {
                     }
                 }
             }
-            outputTuples(selectedFieldNames, selectedTuples);
+            show(parser.selectNode, selectedFieldNames, selectedTuples);
         }
         catch (Exception e){
             System.out.println("e= " + e);
         }
     }
 
-    private void outputTuples(List<String> selectedFieldNames, List<Tuple> selectedTuples){
-        // print tuples
-        if(selectedTuples.size() == 0){
-            System.out.println("No Tuple Found!");
-            return;
-        }
-        String sb;
-        sb = String.join("\t", selectedFieldNames) + "\n";
-        for(Tuple tuple : selectedTuples){
-            for(String attri:selectedFieldNames){
-                sb += (tuple.getField(attri) + "\t");
+//    private void outputTuples(List<String> selectedFieldNames, List<Tuple> selectedTuples){
+//        // print tuples
+//        if(selectedTuples.size() == 0){
+//            System.out.println("No Tuple Found!");
+//            return;
+//        }
+//        String sb;
+//        sb = String.join("\t", selectedFieldNames) + "\n";
+//        for(Tuple tuple : selectedTuples){
+//            for(String attri:selectedFieldNames){
+//                sb += (tuple.getField(attri) + "\t");
+//            }
+//            sb += "\n";
+//        }
+//        System.out.println(sb);
+//    }
+
+    /**
+     * Print out results which satisfy where condition.
+     * Be able to eliminate duplicates if there is a "distinction" requirement
+     * **/
+    private void show(ParseTreeNode parseTreeNode, Relation relation, List<String> selectedFieldNames){
+        int relationNumOfBlocks = relation.getNumOfBlocks();
+        int numberOfRows = 0;
+        String prev = "nullPrev";
+        if(parseTreeNode.getTablelist() == null || parseTreeNode.getTablelist().size() == 0) return;
+        String tableName = parseTreeNode.getTablelist().get(0);
+        // print column headers
+        if(tableName.indexOf("_cross_") == -1 && tableName.indexOf("_natureJoin_") == -1){
+            for(int i = 0; i < selectedFieldNames.size(); i++){
+                String selectedFieldName = selectedFieldNames.get(i);
+                if(selectedFieldName.indexOf(".") != -1) {
+                    selectedFieldNames.set(i, selectedFieldName.split("\\.")[1]);
+                }
+                System.out.print(selectedFieldNames.get(i) + "\t");
             }
-            sb += "\n";
         }
-        System.out.println(sb);
+        System.out.println();
+
+        for(int i = 0; i < relationNumOfBlocks; i++){
+            // read a block from disk to main memory[0]
+            relation.getBlock(i, 0);
+            Block mainMemoryBlock = mainMemory.getBlock(0);
+            if(mainMemoryBlock.getNumTuples() == 0){
+                continue;
+            }
+            for(Tuple tuple : mainMemoryBlock.getTuples()){
+                if(tuple.isNull()) continue;
+                if(parseTreeNode.isWhere()){
+                    ExpressionTree tree = new ExpressionTree(parseTreeNode.search_condition);
+                    if(!tree.check(tuple, tree.getRoot())) continue;
+                }
+                StringBuilder sb = new StringBuilder();
+                for(String field : selectedFieldNames){
+                    String val = tuple.getField(field).toString();
+                    if(val.equals("-2147483648") || val.equals("null")){
+                        val = "NULL";
+                    }
+                    sb.append(val).append("\t");
+                }
+                System.out.println();
+                String cur = sb.toString();
+                if(parseTreeNode.isDistinct() && cur.equalsIgnoreCase(prev)) continue;
+                prev = cur;
+                System.out.println(cur);
+                numberOfRows ++;
+            }
+
+        }
+        System.out.println("----------------------------------");
+        System.out.println(numberOfRows + " rows of results");
+        System.out.println();
+    }
+
+    /**
+     * Override show(**args) function.
+     * Selectedtuples: list of tuples which already satisfy parseTreeNode's search condition
+     * **/
+    private void show(ParseTreeNode parseTreeNode, List<String> selectedFieldNames, List<Tuple> selectedTuples){
+        int numberOfRows = 0;
+        String prev = "nullPrev";
+        if(parseTreeNode.getTablelist() == null || parseTreeNode.getTablelist().size() == 0) return;
+        String tableName = parseTreeNode.getTablelist().get(0);
+        // print column headers
+
+        if(tableName.indexOf("_cross_") == -1){
+            for(int i = 0; i < selectedFieldNames.size(); i++){
+                String selectedFieldName = selectedFieldNames.get(i);
+                if(selectedFieldName.indexOf(".") != -1) {
+                    selectedFieldNames.set(i, selectedFieldName.split("\\.")[1]);
+                }
+                System.out.print(selectedFieldNames.get(i) + "\t");
+            }
+        }
+        System.out.println();
+        for(Tuple tuple : selectedTuples){
+            //if(tuple.isNull()) continue;
+            StringBuilder sb = new StringBuilder();
+            for(String field : selectedFieldNames){
+                String val = tuple.getField(field).toString();
+                if(val.equals("-2147483648") || val.equals("null")){
+                    val = "NULL";
+                }
+                sb.append(val).append("\t");
+            }
+            String cur = sb.toString();
+            if(parseTreeNode.isDistinct() && cur.equals(prev)) continue;
+            prev = cur;
+            System.out.println(cur);
+            numberOfRows ++;
+        }
+        System.out.println("----------------------------------");
+        System.out.println(numberOfRows + " rows of results");
+        System.out.println();
     }
 
     public void clearMainMemory(){
@@ -453,27 +636,31 @@ public class Main {
     }
 
     public static void main(String[] args){
-        String createStmt1 = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-        String createStmt2 = "CREATE TABLE course2 (sid INT, exam INT, grade STR20)";
-        //String dropStmt = "DROP TABLE  ss12345";
-        String insertStmt1 = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
-        String insertStmt2 = "INSERT INTO course2 (sid, exam, grade) VALUES (1, 100, A)";
-        String selectStmt1 = "SELECT * FROM course2, course";
-        String selectStmt2 = "SELECT * FROM course2";
-        Main m = new Main();
-        m.exec(createStmt1);
-        m.exec(createStmt2);
-        for(int i = 0; i < 4; i++){
-            m.exec(insertStmt1);
-        }
-        m.exec(insertStmt2);
-        m.exec(selectStmt1);
-        m.exec(selectStmt2);
-//          Main main = new Main();
-//          long startTime = System.nanoTime();
-//          main.parseFile("test.txt");
-//          long endTime = System.nanoTime();
-//          System.out.println("Time Used: " + (endTime - startTime)/1000000000 + "s");
+//        String createStmt1 = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+//        String createStmt2 = "CREATE TABLE course2 (sid INT, exam INT, grade STR20)";
+//        //String dropStmt = "DROP TABLE  ss12345";
+//        String insertStmt1 = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (1,2,3,4,good)";
+//        String insertStmt11 = "INSERT INTO course (sid,homework,project,exam,grade) VALUES (2,0,5,1,bad)";
+//        String insertStmt2 = "INSERT INTO course2 (sid, exam, grade) VALUES (1, 100, A)";
+//        String selectStmt1 = "SELECT * FROM course";
+//        String selectStmt2 = "SELECT * FROM course2";
+//        Main m = new Main();
+//        m.exec(createStmt1);
+//        m.exec(createStmt2);
+//        for(int i = 0; i < 4; i++){
+//            m.exec(insertStmt1);
+//        }
+//        m.exec(insertStmt1);
+//        m.exec(insertStmt11);
+//        m.exec(insertStmt1);
+//        m.exec(insertStmt11);
+//        m.exec(selectStmt1);
+        //m.exec(selectStmt2);
+          Main main = new Main();
+          long startTime = System.nanoTime();
+          main.parseFile("test2.txt");
+          long endTime = System.nanoTime();
+          System.out.println("Time Used: " + (endTime - startTime)/1000000000 + "s");
     }
 }
 

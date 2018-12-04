@@ -71,11 +71,13 @@ public class Join {
             else { tuple3.setField(index, value); }
         }
         // loop tp2, fetch its values
-        index -= tuple1.getNumOfFields();
+        // index -= tuple1.getNumOfFields();
+        index = 0;
         for(; index < tuple2.getNumOfFields(); index++) {
             String value = tuple2.getField(index).toString();
+            //System.out.println("offset: " + index + tuple1.getNumOfFields());
             if(isInteger(value)) { tuple3.setField(index + tuple1.getNumOfFields(), Integer.parseInt(value)); }
-            else { tuple3.setField(index + tuple3.getNumOfFields(), value); }
+            else { tuple3.setField(index + tuple1.getNumOfFields(), value); }
         }
         return tuple3;
     }
@@ -85,7 +87,6 @@ public class Join {
 
         ArrayList<String> fieldNames = new ArrayList<>();
         ArrayList<FieldType> fieldTpyes = new ArrayList<>();
-
         for(int i = 0; i < schema1.getNumOfFields(); i++){
             String fieldName = schema1.getFieldNames().get(i);
             if(!fieldName.contains(".")){
@@ -103,7 +104,10 @@ public class Join {
             fieldNames.add(fieldName);
             fieldTpyes.add(schema2.getFieldTypes().get(j));
         }
+        //System.out.println("new filed names: " + fieldNames);
+        //System.out.println("new filed types: " + fieldTpyes);
         Schema schema3 = new Schema(fieldNames, fieldTpyes);
+        //System.out.println("new schema's number of fields: " + schema3.getNumOfFields());
         return schema3;
     }
 
@@ -115,6 +119,7 @@ public class Join {
         Relation relation1 = mngr.getRelation(table1);
         Relation relation2 = mngr.getRelation(table2);
         Schema schema3 = joinTwoSchema(table1, table2, relation1.getSchema(), relation2.getSchema());
+        System.out.println("new schema's fields: " + schema3.getNumOfFields());
         // ie: "course_cross_course2"
         String table3 = table1 + "_cross_" + table2;
         // create an empty relation
@@ -152,14 +157,18 @@ public class Join {
     public String joinTwoTables(Main Phi, String table1, String table2){
         System.out.println("Join two tables: " + table1 +" and " + table2);
         SchemaManager mngr = Phi.schemaManager;
+        //System.out.println("cur manager has course2: " + mngr.relationExists("course2"));
         Relation relation1 = mngr.getRelation(table1);
         Relation relation2 = mngr.getRelation(table2);
+        // join two schema
         Schema schema3 = joinTwoSchema(table1, table2, relation1.getSchema(), relation2.getSchema());
+        System.out.println("new schema's fields: " + schema3.getNumOfFields());
         // ie: "course_cross_course2"
         String table3 = table1 + "_cross_" + table2;
         // a new empty relation
         mngr.createRelation(table3, schema3);
         Relation relation3 = mngr.getRelation(table3);
+        //System.out.println("new relation: " + relation3.getRelationName());
         // create a new corresponding tuple
         Tuple tuple3 = relation3.createTuple();
         // read tuples from table1 and table2, join them then insert it into table3
@@ -170,15 +179,14 @@ public class Join {
             if(block1.getNumTuples() == 0) continue;
             for(Tuple tuple1 : block1.getTuples()){
                 // inner loop for relation 2
-                // 感觉需要有优化，四个循环太慌了
                 for(int j = 0; j < relation2.getNumOfBlocks(); j++){
-                    // 为什么每次都要读进main memory的一个block里面。。
                     relation2.getBlock(j,2);
                     Block block2 = Phi.mainMemory.getBlock(2);
                     if(block2.getNumTuples() == 0) continue;
                     for(Tuple tuple2 : block2.getTuples()){
                         tuple3 = joinTwoTuples(tuple1, tuple2, tuple3);
-                        Phi.appendTuple(relation3, Phi.mainMemory, 9, tuple3);
+                        //System.out.println("tuple 3" + tuple3);
+                        Phi.appendTuple(relation3, Phi.mainMemory, 5, tuple3);
                     }
                 }
             }
@@ -322,7 +330,7 @@ public class Join {
             key2 = key2.split("\\.")[1];
         }
 
-        String tempRelationName = table1+"natureJoin"+table2;
+        String tempRelationName = table1+"_natureJoin_"+table2;
         Schema tempSchema = joinTwoSchema(table1,table2,schema1,schema2);
         Relation tempRelation = Phi.schemaManager.createRelation(tempRelationName,tempSchema);
 

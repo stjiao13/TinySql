@@ -124,7 +124,7 @@ public class ExpressionTree {
                     // remove "("
                     operator.pop();
                 }else{
-                    System.out.println("part: " + part);
+                    //System.out.println("part: " + part);
                     int pre = preference.get(part);
                     while((!operator.isEmpty()) && (pre)<=preference.get(operator.peek())){
                         // connect tree nodes with higher preference
@@ -236,13 +236,15 @@ public class ExpressionTree {
             // value
             if(filedNames.get(i).equalsIgnoreCase(expression)){
                 // Field f = tuple.getField(i);
-                return tuple.getField(expression).toString();
+                return tuple.getField(expression).toString().replaceAll("\\\"", "");
             }
             if(dotLoc!=-1 && filedNames.get(i).equalsIgnoreCase(expression.substring(dotLoc+1))){
-                return tuple.getField(expression.substring(dotLoc+1)).toString();
+                return tuple.getField(expression.substring(dotLoc+1)).toString().replaceAll("\\\"", "");
             }
         }
+        expression = expression.replaceAll("\\\"", "");
         // attribute
+        //System.out.println("Expression: " + expression);
         return expression;
     }
 
@@ -315,7 +317,7 @@ public class ExpressionTree {
     }
 
     public static void main(String[] args){
-        String stmt = "course.sid = course2.sid AND course.exam > course2.exam";
+        String stmt = "grade = E";
         ExpressionTree test = new ExpressionTree();
         TreeNode root = test.buildTree(stmt);
         System.out.println(root.getValue());

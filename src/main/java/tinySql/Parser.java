@@ -94,7 +94,7 @@ public class Parser {
         List<String> tableList = new ArrayList<>();
         String[] splitResult = statement.split("select|from|where");
         //
-        System.out.println("split resutls: " + Arrays.toString(splitResult));
+        //System.out.println("split resutls: " + Arrays.toString(splitResult));
 
         // split attributes
         String[] attributes = splitResult[1].trim().replace(",", " ").split("\\s+");
@@ -157,6 +157,7 @@ public class Parser {
 		if (!validateDelete(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
+		statement = statement.replaceAll("\\\"", "");
 
 		Pattern r1 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)");
 		Pattern r2 = Pattern.compile("DELETE\\s+FROM\\s+([a-z][a-z0-9]*)\\s+WHERE\\s+(.*)");
@@ -165,6 +166,7 @@ public class Parser {
 
 		// 因为match r2的也会match r1，所以要先判断r2是否match
 		if (m2.find()) {
+			//System.out.println("r2 match!");
 		    // create a new parseTreeNode
 			deleteNode = new ParseTreeNode("DELETE");
 			// set from = true
@@ -186,6 +188,7 @@ public class Parser {
 		    /*
 		    similar as above but don't need to set where condition
 		    * */
+			//System.out.println("r1 match!");
             deleteNode = new ParseTreeNode("DELETE");
             deleteNode.setFrom(true);
             deleteNode.setWhere(false);
@@ -314,7 +317,7 @@ public class Parser {
 				}
 			}
 			else {
-				// System.out.println("select = " + other);
+				//System.out.println("select = " + other);
 				parseSelect(other);
 				insertNode.setValue_lst_with_select(selectNode);
 			}
@@ -331,15 +334,15 @@ public class Parser {
 		Parser test = new Parser();
 
 //		//test select
-		try {
-
-			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
-			//test.parseSelect("SELECT * FROM course");
-            System.out.println("test.res = " + test.selectNode);
-		}
-		catch (Exception e) {
-			System.out.println("e = " + e);
-		}
+//		try {
+//
+//			test.parseSelect("SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id");
+//			//test.parseSelect("SELECT * FROM course");
+//            System.out.println("test.res = " + test.selectNode);
+//		}
+//		catch (Exception e) {
+//			System.out.println("e = " + e);
+//		}
 
 
 //		 test drop
@@ -356,14 +359,14 @@ public class Parser {
 //
 //
 		// test delete
-//		try {
-//
-//			test.parseDelete("DELETE FROM course WHERE sid == 1");
-//			System.out.println("test.res = " + test.deleteNode);
-//		}
-//		catch (Exception e) {
-//			System.out.println("e = " + e);
-//		}
+		try {
+
+			test.parseDelete("DELETE FROM course WHERE grade == E");
+			System.out.println("test.res = " + test.deleteNode);
+		}
+		catch (Exception e) {
+			System.out.println("e = " + e);
+		}
 
 //
 //		try {
