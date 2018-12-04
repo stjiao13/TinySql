@@ -658,7 +658,7 @@ public class Main {
         //m.exec(selectStmt2);
           Main main = new Main();
           long startTime = System.nanoTime();
-          main.parseFile("test2.txt");
+          main.parseFile("test3.txt");
           long endTime = System.nanoTime();
           System.out.println("Time Used: " + (endTime - startTime)/1000000000 + "s");
     }

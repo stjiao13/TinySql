@@ -62,39 +62,28 @@ public class Parser {
 
 	}
 
-	// parsing method
-	public void parseSelect (String statement) throws ParseException{
-	    /*
+	/**
 	    Parse "Select" statement
 	    ie: "SELECT DISTINCT persons.id FROM persons, companys WHERE persons.id = 2 ORDER BY persons.id"
-	    * */
+	 * **/
+	public void parseSelect (String statement) throws ParseException{
 		if (!validateSelect(statement)) {
 			throw new ParseException("Syntax Error!",60);
 		}
-
-		// Pattern Matcher class from java.util.regex
-        // 先comment掉舒童写一半的完整版
-//		Pattern r = Pattern.compile("SELECT\\s+(DISTINCT\\s+[a-z0-9.]*|[a-z0-9.]*)\\s+FROM\\s+([a-z0-9,\\s]*)(.*)");
-//		Matcher m = r.matcher(statement);
-//
-//		if (m.find()) {
-//			for (int i = 1; i <= m.groupCount(); i++) {
-//				System.out.println("m.group("+i+")" + m.group(i));
-//			}
-//		}
 
         selectNode = new ParseTreeNode("SELECT");
 		selectNode.setFrom(true);
 
         // 先从最简单的"select * from (one table)"开始
         statement = statement.trim().toLowerCase();
+        statement = statement.replaceAll("[\\s]+", " ").replaceAll("\\\"", "");
 		//if(statement.indexOf("from") == -1) return ; //validateSelect
 
         List<String> attributeList = new ArrayList<>();
         List<String> tableList = new ArrayList<>();
-        String[] splitResult = statement.split("select|from|where");
+        String[] splitResult = statement.split("select|from|where|order by");
         //
-        //System.out.println("split resutls: " + Arrays.toString(splitResult));
+        // System.out.println("split results: " + Arrays.toString(splitResult));
 
         // split attributes
         String[] attributes = splitResult[1].trim().replace(",", " ").split("\\s+");
@@ -125,16 +114,28 @@ public class Parser {
         selectNode.setTablelist(tableList);
 
         /*
-        condition expression, contains search condition and order condition
-        ie: persons.id = 2 order by persons.id
+        condition expression, contains search condition and order condition.
+        There are 3 cases in total:
+        1. only where(search) condition
+        2. only order condition
+        3. where condition and order condition
+        ie: where persons.id = 2 order by persons.id
         * */
-        String condition = (splitResult.length == 3) ? "":splitResult[3].toLowerCase().trim();
-        // System.out.println("condition: " + condition);
-        if(condition.trim().equals("")){
+        String condition = "";
+        if(splitResult.length >= 4){
+        	condition = (splitResult.length == 5) ? splitResult[3]+" order by " +
+					splitResult[4] : (statement.indexOf("order by") == -1) ? splitResult[3] : " order by " + splitResult[3];
+        	condition = condition.trim();
+		}
+
+        System.out.println("condition: " + condition);
+        if(condition.equals("") || ((!condition.equals("")) && condition.indexOf("order by") == 0)){
             selectNode.setWhere(false);
         }else{
             selectNode.setWhere(true);
         }
+        // System.out.println("is where? " + selectNode.isWhere());
+
         String searchCondition, orderCondition;
         if(condition.indexOf("order by") != -1){
             selectNode.setHasOrder(true);
@@ -148,6 +149,8 @@ public class Parser {
             searchCondition = condition;
         }
         selectNode.setSearch_condition(searchCondition);
+		// System.out.println("where condition: " + selectNode.getSearch_condition());
+		// System.out.println("order condition: " + selectNode.getOrder_by());
 	}
 
 	public void parseDelete (String statement) throws ParseException{

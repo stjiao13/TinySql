@@ -298,7 +298,12 @@ public class ExpressionTree {
         }
         else if(curOp.equals("|")){
             return String.valueOf(Boolean.parseBoolean(leftOp) || Boolean.parseBoolean(rightOp));
-        }else{
+        }
+        else if(curOp.equals("!")){
+            // return (Boolean.parseBoolean(rightOp) == true ? "false" : "true");
+            return String.valueOf(!Boolean.parseBoolean(rightOp));
+        }
+        else{
             if(isInteger(curOp)){
                 return curOp;
             }else {
@@ -317,10 +322,12 @@ public class ExpressionTree {
     }
 
     public static void main(String[] args){
-        String stmt = "grade = E";
+        String stmt = "not grade = E";
         ExpressionTree test = new ExpressionTree();
         TreeNode root = test.buildTree(stmt);
         System.out.println(root.getValue());
+        System.out.println(root.left.getValue());
+        System.out.println(root.right.getValue());
         System.out.println(test.toString(root));
     }
 }
