@@ -3,5 +3,4 @@ INSERT INTO course (sid, homework, project, exam, grade) VALUES (1, 99, 100, 100
 INSERT INTO course (sid, homework, project, exam, grade) VALUES (3, 100, 100, 98, "C")
 INSERT INTO course (sid, homework, project, exam, grade) VALUES (3, 100, 69, 64, "C")
 INSERT INTO course (sid, homework, project, exam, grade) VALUES (15, 100, 50, 90, "E")
-SELECT * FROM course where not exam = 100
-SELECT * FROM course where not sid = 3
+SELECT * FROM course WHERE [ exam = 100 OR homework = 100 ] AND project = 100
