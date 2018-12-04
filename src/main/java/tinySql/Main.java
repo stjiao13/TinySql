@@ -177,7 +177,6 @@ public class Main {
     }
 
     private void insertQuery(String stmt){
-        // TODO
         /*
         Do "insert" action
 
@@ -430,6 +429,7 @@ public class Main {
             }
 
             if(!parser.selectNode.isDistinct() && !parser.selectNode.isOrder()){
+                // System.out.println("has where? " + parser.selectNode.getSearch_condition());
                 show(parser.selectNode, relation, selectedFieldNames);
                 return;
             }
@@ -562,6 +562,7 @@ public class Main {
                 if(tuple.isNull()) continue;
                 if(parseTreeNode.isWhere()){
                     ExpressionTree tree = new ExpressionTree(parseTreeNode.search_condition);
+                    // System.out.println("tree built: " + tree.toString(tree.getRoot()));
                     if(!tree.check(tuple, tree.getRoot())) continue;
                 }
                 StringBuilder sb = new StringBuilder();
@@ -658,7 +659,7 @@ public class Main {
         //m.exec(selectStmt2);
           Main main = new Main();
           long startTime = System.nanoTime();
-          main.parseFile("test3.txt");
+          main.parseFile("test1.txt");
           long endTime = System.nanoTime();
           System.out.println("Time Used: " + (endTime - startTime)/1000000000 + "s");
     }

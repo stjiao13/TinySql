@@ -128,7 +128,7 @@ public class Parser {
         	condition = condition.trim();
 		}
 
-        System.out.println("condition: " + condition);
+        // System.out.println("condition: " + condition);
         if(condition.equals("") || ((!condition.equals("")) && condition.indexOf("order by") == 0)){
             selectNode.setWhere(false);
         }else{

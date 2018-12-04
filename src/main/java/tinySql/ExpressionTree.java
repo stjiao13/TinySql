@@ -74,9 +74,9 @@ public class ExpressionTree {
         preference.put("=",2);
         preference.put("!",1);
         preference.put("&",0);
-        preference.put("(",0);
-        preference.put(")",0);
         preference.put("|",-1);
+        preference.put("(",-2);
+        preference.put(")",-2);
     }
 
 
@@ -111,11 +111,12 @@ public class ExpressionTree {
         TreeNode root;
 
         List<String> words = split(str);
+        // System.out.println("splited words: " + words);
         for(String part : words){
+
             if(isOperator(part)){
                 if(part.equals("(")){
                     operator.push(part);
-                    break;
                 }else if(part.equals(")")){
                     while((!operator.isEmpty()) && !operator.peek().equals("(")){
                         // connect tree nodes with higher preference
@@ -124,8 +125,10 @@ public class ExpressionTree {
                     // remove "("
                     operator.pop();
                 }else{
-                    //System.out.println("part: " + part);
+                    // System.out.println("non () operator part: " + part);
+                    //process precedence
                     int pre = preference.get(part);
+                    // System.out.println(operator);
                     while((!operator.isEmpty()) && (pre)<=preference.get(operator.peek())){
                         // connect tree nodes with higher preference
                         connect(operator.pop());
@@ -134,9 +137,11 @@ public class ExpressionTree {
                     operator.push(part);
                 }
             }else{
+                // System.out.println("operand part: " + part);
                 operand.push(new TreeNode(part));
             }
         }
+        // System.out.println("operator stack: " + operator);
         while(!operator.isEmpty()){
             connect(operator.pop());
         }
@@ -149,7 +154,7 @@ public class ExpressionTree {
     private void connect(String oprt){
         /* helper function: connect children nodes to parent node */
         TreeNode right = operand.pop();
-        TreeNode left;
+        TreeNode left = null;
         TreeNode node;
         if(oprt.equals("!")){
             node = new TreeNode("!",new TreeNode("false"), right);
@@ -193,8 +198,12 @@ public class ExpressionTree {
                 else if(s.toLowerCase().equals("not")) words.add("!");
                 else words.add(s);
             }else{
-                // operators: + - * / = ( )
-                words.add(String.valueOf(str.charAt(index)));
+                // operators: + - * / = ( ) [ ]
+                char c = str.charAt(index);
+                if(c == '[') c = '(';
+                if(c ==']') c = ')';
+                // System.out.println("c: " + c);
+                words.add(String.valueOf(c));
             }
         }
 
@@ -215,7 +224,9 @@ public class ExpressionTree {
             c == '/' ||
             c == '&' ||
             c == '|' ||
-            c == '!' ){
+            c == '!' ||
+            c == '(' ||
+            c == ')'){
             return true;
         }
         return false;
@@ -322,7 +333,7 @@ public class ExpressionTree {
     }
 
     public static void main(String[] args){
-        String stmt = "not grade = E";
+        String stmt = "( exam = 100 or homework = 100 )";
         ExpressionTree test = new ExpressionTree();
         TreeNode root = test.buildTree(stmt);
         System.out.println(root.getValue());
