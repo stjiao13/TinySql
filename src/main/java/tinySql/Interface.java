@@ -13,7 +13,7 @@ public class Interface {
             System.out.println("TinySQL:");
             System.out.println("To execute file, please enter: source absolute_path_to_file");
             System.out.println();
-            System.out.println("Please enter your TinySQL command:");
+            System.out.println("Please enter your TinySQL command: ");
             InputStreamReader inputStreamReader = new InputStreamReader(System.in);
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             String readString = bufferedReader.readLine();
