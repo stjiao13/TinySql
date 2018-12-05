@@ -10,7 +10,8 @@ This project is to implement a Tiny-SQL interpreter.
 
 ---
 ## To start with
-1.Decompress out.zip to current directory
+
+1. Decompress out.zip to current directory
 
 2. Change current directory
 ```
