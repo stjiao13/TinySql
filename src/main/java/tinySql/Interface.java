@@ -41,6 +41,9 @@ public class Interface {
 					main.parseFile(filepath);
 				}
 				main.pw.close();
+				System.out.println("Query Success! Run interface again if you need another query.");
+				System.out.println();
+				bufferedReader.close();
 				return;
 			}
 
@@ -53,7 +56,10 @@ public class Interface {
                 }
             }
             while (readString != null);
-        } catch (Exception e){
+			System.out.println();
+			System.out.println("Query Success! Run interface again if you need another query.");
+			return;
+		} catch (Exception e){
             System.out.println("IO error");
         }
 
