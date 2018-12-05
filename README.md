@@ -1,13 +1,13 @@
 ---
 title:  CSCE608 Project 2 TinySQL
-author: Yuelin Zhang, Shutong Jiao
+team memeber: Yuelin Zhang | zyl960822-@tamu.edu
+team  member: Shutong Jiao | stj13@tamu.edu
 ---
 
 ## Introduction
 
 
 This project report will give brief explanation of the software architecture of the tinysql project which includes interface, parser, logical and physical query plan. Then it discuss the optimizations made in logical and physical query plan in details. At last, it shows execution results on given tests and custom tests.
-
 
 ---
 ## To start with
@@ -38,7 +38,7 @@ The parser class accepts a tiny sql statement as input and then return a parse t
 
 #### Select Operation
 
-```
+```java
 public class ParseTreeNode {
 // type = "DELECT" or "SELECT"
 public String type;
@@ -68,7 +68,7 @@ For delete operation we will generate the same parse tree node in Figure 1. A de
 
 For create operation, the corresponding parse tree node is defined as below:
 
-```
+```java
 public class CreateNode {
 public String table_name;
 public List<String[]> attribute_type_list;
@@ -80,7 +80,7 @@ Here, the value in attribute_type_list is the pair of name and type represented 
 
 For drop operation, the corresponding parse tree node is defined as below:
 
-```
+```java
  public class DropNode { 
  String table_name;
 ```
@@ -91,7 +91,7 @@ Like create operation, drop operation is very simple and will just need to store
 
 For insert operation, the corresponding parse tree node is defined as below:
 
-```
+```java
 public class InsertNode {
 public String table_name;
 public List<String> attribute_list;
@@ -105,35 +105,37 @@ There are two types of insert statement. One is to insert plain values and anoth
 For select or delete query with “Where” clause like: SELECT * FROM course WHERE exam = 100 AND project = 100, we need to evaluate tuples with such conditions. An Expression Tree to represent conditions and provide tuple evaluation functionality. A Boolean value will be returned to check whether a tuple satisfy expression tree’s condition.
 Expression Tree:
 
-```
+```java
 public class ExpressionTree { 
-public TreeNode root;
-private Stack<String> operator; private Stack<TreeNode> operand;
-    // operator preference
-private static final Map<String, Integer > preference; ....
+      public TreeNode root;
+      private Stack<String> operator; private Stack<TreeNode> operand;
+          // operator preference
+      private static final Map<String, Integer > preference; ....
 ```
 
 Evaluate a tuple:
 
-```
-public boolean check(Tuple tuple, TreeNode node){ return Boolean.parseBoolean(evaluate(tuple, node));
+```java
+public boolean check(Tuple tuple, TreeNode node){ 
+     return Boolean.parseBoolean(evaluate(tuple, node));
 }
-public String evaluate(Tuple tuple, TreeNode node){ /*
-Evaluate input tuple whether satisfies the expression (expression tree rooted at input node)
-* */
-if(node == null) return null;
-        String curOp = node.getValue();
-        String leftOp, rightOp;
-        leftOp = evaluate(tuple, node.getLeft());
-        rightOp = evaluate(tuple, node.getRight());
-if(curOp.equals("=")){ if(isInteger(leftOp)) {
-                // are digits, compare values
-return String.valueOf(Integer.parseInt(leftOp) == Integer.parseInt(rightOp));
-} else {
-// are strings, compare strings return
-String.valueOf(leftOp.equalsIgnoreCase(rightOp));
-            }
-} ..........
+public String evaluate(Tuple tuple, TreeNode node){ 
+      /*
+      Evaluate input tuple whether satisfies the expression (expression tree rooted at input node)
+      * */
+       if(node == null) return null;
+               String curOp = node.getValue();
+               String leftOp, rightOp;
+               leftOp = evaluate(tuple, node.getLeft());
+               rightOp = evaluate(tuple, node.getRight());
+       if(curOp.equals("=")){ if(isInteger(leftOp)) {
+                       // are digits, compare values
+       return String.valueOf(Integer.parseInt(leftOp) == Integer.parseInt(rightOp));
+       } else {
+       // are strings, compare strings return
+       String.valueOf(leftOp.equalsIgnoreCase(rightOp));
+                   }
+       } ..........
 ```
 
 ### Physical Query Plan
@@ -153,22 +155,24 @@ We need to handle two types of input – single sql statement and a text file co
 Main object will call exec for single sql statement which is shown below.
 We could see that based on the type of the statement, specific query method will be called and we discuss them one by one.
 
-```
-public void exec(String stmt) { //System.out.println("Statement: " + stmt); /*
+```java
+public void exec(String stmt) { 
+/*
 Analyse query statement then do
 create/drop/insert/delete/select action
-        * */
-        // remove duplicate spaces regex: "[\\s+]"
-String action = stmt.trim().toLowerCase().split("\\s+")[0];
-        //System.out.println("Action: " + action);
-if(action.equals("create")){ this.createQuery(stmt);
-}else if(action.equals("drop")){ this.dropQuery(stmt);
-}else if(action.equals("insert")){ this.insertQuery(stmt);
-}else if(action.equals("delete")){ this.deleteQuery(stmt);
-}else if(action.equals("select")){ this.selectQuery(stmt);
-}else {
-// throw exception
-} }
+ * */
+
+       String action = stmt.trim().toLowerCase().split("\\s+")[0];
+               //System.out.println("Action: " + action);
+       if(action.equals("create")){ this.createQuery(stmt);
+       }else if(action.equals("drop")){ this.dropQuery(stmt);
+       }else if(action.equals("insert")){ this.insertQuery(stmt);
+       }else if(action.equals("delete")){ this.deleteQuery(stmt);
+       }else if(action.equals("select")){ this.selectQuery(stmt);
+       }else {
+       // throw exception
+       } 
+}
 ```
 
 #### Create Query
@@ -192,18 +196,24 @@ Generally, we will have two types of select statemen – select from one table a
 
 
 ```
-private void selectQuery(String stmt){ try{
-            // update select parser note
-            parser.parseSelect(stmt);
-            List<String> tableList =
-parser.selectNode.getTablelist();
-if(tableList.size() == 1){ //select one table
-selectQuery1(); }else{
+private void selectQuery(String stmt){ 
+    try{
+        // update select parser note
+        parser.parseSelect(stmt);
+        List<String> tableList = parser.selectNode.getTablelist();
+        if(tableList.size() == 1){ 
+              //select one table
+              selectQuery1();
+              }
+              else{
                //select multi-tables
-                selectQuery2();
-} }
-catch (Exception e){ System.out.println("e= " + e);
-} }
+               selectQuery2();
+               } 
+         }
+    catch (Exception e){ 
+        System.out.println("e= " + e);
+    } 
+}
 ```
 
 First, if we just select form one table we will statement like "select \[distinct\] (attributes or *) from (one table) where []"and selectQuery1 method will be called . The parser will be called and decide if we have optional arguments like distinct. Similar to the case of delete statement, we deal with where condition by calling the check method in the ExpressionTree class. If we have “distinct” keyword we drop the duplicate by using HashSet class. At last, we will define a custom comparator for tuple if we need to sort the result.
@@ -215,19 +225,28 @@ Then, if we need to select from multiple table, selectQuery2 method will be call
 Apart from “Where” conditions, “distinct” and “Order by” operations are also realized in physical query plan.
 So we create a UniqueTuple class, override hashcode and comparator. Based on this class, we realize one pass duplication elimination and sorting.
 
-```
-public class uniqueTuple implements Comparable<uniqueTuple>{ private List<Field> fields;
-private List<String> selectedFieldNames;
-private Field key;
-public int hashCode(){ String str = ""; for(Field f:fields){
-str += f; }
-return str.hashCode(); }
-public int compareTo(uniqueTuple tuple2){ if(key.type == FieldType.STR20){
-return key.str.compareTo(tuple2.key.str); }else{
-return
-      ((Integer)key.integer).compareTo(tuple2.key.integer);
+```java
+public class uniqueTuple implements Comparable<uniqueTuple>{
+    private List<Field> fields;
+    private List<String> selectedFieldNames;
+    private Field key;
+
+    public int hashCode(){
+        String str = "";
+        for(Field f:fields){
+            str += f;
         }
-} ...
+        return str.hashCode();
+    }
+
+    public int compareTo(uniqueTuple tuple2){
+        if(key.type == FieldType.STR20){
+            return key.str.compareTo(tuple2.key.str);
+        }else{
+      return ((Integer)key.integer).compareTo(tuple2.key.integer);
+        }
+    }
+...
 ```
 
 #### Join Operation:
