@@ -1,7 +1,7 @@
 ---
 title:  CSCE608 Project 2 TinySQL
 team memeber: Yuelin Zhang | zyl960822-@tamu.edu
-team  member: Shutong Jiao | stj13@tamu.edu
+team  member: Shutong Jiao | stjiao13@tamu.edu
 ---
 
 ## Introduction
