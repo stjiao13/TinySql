@@ -28,26 +28,9 @@ java main.java.tinySql.Interface
 
 ### Interface
 
-Below is the snapshot of the interface of our program.
-
-```
-Hi, this is our TinySQL project! =================================
-TinySQL:
-To execute file, please enter: source absolute_path_to_file
-To execute file, please enter: source absolute_path_to_file >
-output_flie_name
-To execute single sql statement, just enter the statement
-Please enter your TinySQL command:
-CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)
-CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)
-createRelation ERROR: course already exists
-INSERT INTO course (sid, homework, project, exam, grade) VALUES (1, 99, 100, 100, "A")
-SELECT * FROM course
-exam homework grade project sid
-100 99 "A" 100 1 ---------------------------------- 1 rows of results
-```
-
 The user would either type a single sql statement or perform sql query on a text file with sql statements. User may also specify the filename of outputfileThis user-friendly interface makes user easier to implement sql statement using this program.
+
+Below is the snapshot of the interface of our program.
 
 ### Parser
 
