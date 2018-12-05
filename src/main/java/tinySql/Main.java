@@ -2,9 +2,7 @@ package main.java.tinySql;
 
 import main.java.storageManager.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class Main {
@@ -13,8 +11,9 @@ public class Main {
     Disk disk;
     SchemaManager schemaManager;
     Join join;
+    PrintWriter pw;
 
-    public Main(){
+    public Main() throws IOException {
         parser = new Parser();
         mainMemory = new MainMemory();
         disk = new Disk();
@@ -22,6 +21,20 @@ public class Main {
         disk.resetDiskIOs();
         disk.resetDiskTimer();
         join = new Join();
+
+        pw = new PrintWriter(new FileWriter("output.txt"));
+    }
+
+    public Main(String filename) throws IOException {
+        parser = new Parser();
+        mainMemory = new MainMemory();
+        disk = new Disk();
+        schemaManager = new SchemaManager(mainMemory, disk);
+        disk.resetDiskIOs();
+        disk.resetDiskTimer();
+        join = new Join();
+
+        pw = new PrintWriter(new FileWriter(filename + ".txt"));
     }
 
     public void exec(String stmt) {
@@ -547,9 +560,11 @@ public class Main {
                     selectedFieldNames.set(i, selectedFieldName.split("\\.")[1]);
                 }
                 System.out.print(selectedFieldNames.get(i) + "\t");
+                pw.print(selectedFieldNames.get(i) + "\t");
             }
         }
         System.out.println();
+        pw.println();
 
         for(int i = 0; i < relationNumOfBlocks; i++){
             // read a block from disk to main memory[0]
@@ -574,10 +589,12 @@ public class Main {
                     sb.append(val).append("\t");
                 }
                 System.out.println();
+                pw.println();
                 String cur = sb.toString();
                 if(parseTreeNode.isDistinct() && cur.equalsIgnoreCase(prev)) continue;
                 prev = cur;
                 System.out.println(cur);
+                pw.println(cur);
                 numberOfRows ++;
             }
 
@@ -585,6 +602,10 @@ public class Main {
         System.out.println("----------------------------------");
         System.out.println(numberOfRows + " rows of results");
         System.out.println();
+        pw.println("----------------------------------");
+        pw.println(numberOfRows + " rows of results");
+        pw.println();
+
     }
 
     /**
@@ -605,9 +626,11 @@ public class Main {
                     selectedFieldNames.set(i, selectedFieldName.split("\\.")[1]);
                 }
                 System.out.print(selectedFieldNames.get(i) + "\t");
+                pw.print(selectedFieldNames.get(i) + "\t");
             }
         }
         System.out.println();
+        pw.println();
         for(Tuple tuple : selectedTuples){
             //if(tuple.isNull()) continue;
             StringBuilder sb = new StringBuilder();
@@ -622,11 +645,15 @@ public class Main {
             if(parseTreeNode.isDistinct() && cur.equals(prev)) continue;
             prev = cur;
             System.out.println(cur);
+            System.out.println(cur);
             numberOfRows ++;
         }
         System.out.println("----------------------------------");
         System.out.println(numberOfRows + " rows of results");
         System.out.println();
+        pw.println("----------------------------------");
+        pw.println(numberOfRows + " rows of results");
+        pw.println();
     }
 
     public void clearMainMemory(){
@@ -636,7 +663,7 @@ public class Main {
         }
     }
 
-    public static void main(String[] args){
+    public static void main (String[] args) throws IOException  {
 //        String createStmt1 = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
 //        String createStmt2 = "CREATE TABLE course2 (sid INT, exam INT, grade STR20)";
 //        //String dropStmt = "DROP TABLE  ss12345";

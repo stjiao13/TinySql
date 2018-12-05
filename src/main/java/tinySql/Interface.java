@@ -8,15 +8,43 @@ public class Interface {
         try{
             System.out.println("Hi, this is our TinySQL project!");
             System.out.println("=================================");
-            Main main = new Main();
+            Main main;
             System.out.println();
             System.out.println("TinySQL:");
             System.out.println("To execute file, please enter: source absolute_path_to_file");
             System.out.println();
-            System.out.println("Please enter your TinySQL command: ");
+			System.out.println("To execute file, please enter: source absolute_path_to_file > output_flie_name");
+			System.out.println();
+			System.out.println("To execute single sql statement, just enter the statement");
+			System.out.println();
+			System.out.println("Please enter your TinySQL command: ");
             InputStreamReader inputStreamReader = new InputStreamReader(System.in);
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             String readString = bufferedReader.readLine();
+			// judge the type of command - read a file or single sql statement
+            String[] splits = readString.split(" ");
+            int index = splits[0].indexOf("source");
+            if (index >= 0) {
+				// read and output
+				if (splits.length > 2) {
+					String filepath = splits[1];
+					String outputFilename = splits[3];
+					System.out.println("filepath = " + filepath);
+					System.out.println("outputFilename = " + outputFilename);
+					main = new Main(outputFilename);
+					main.parseFile(filepath);
+				}
+				// just read
+				else {
+					main = new Main();
+					String filepath = splits[1];
+					main.parseFile(filepath);
+				}
+				main.pw.close();
+				return;
+			}
+
+			main = new Main();
             main.exec(readString);
             do {
                 readString = bufferedReader.readLine();

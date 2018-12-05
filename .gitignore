@@ -8,3 +8,4 @@
 .idea/vcs.xml
 .DS_Store
 src/main/production/
+src/main/java/tinySql/experiment.java
