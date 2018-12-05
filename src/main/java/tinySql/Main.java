@@ -685,7 +685,7 @@ public class Main {
 //        m.exec(insertStmt11);
 //        m.exec(selectStmt1);
         //m.exec(selectStmt2);
-          Main main = new Main();
+          Main main = new Main("outputOfOriginalTest");
           long startTime = System.nanoTime();
           main.parseFile("test_origin.txt");
           long endTime = System.nanoTime();
