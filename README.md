@@ -6,10 +6,8 @@ team  member: Shutong Jiao | stj13@tamu.edu
 
 ## Introduction
 
-
 This project report will give brief explanation of the software architecture of the tinysql project which includes interface, parser, logical and physical query plan. Then it discuss the optimizations made in logical and physical query plan in details. At last, it shows execution results on given tests and custom tests.
 
----
 ## To start with
 
 1. Decompress out.zip to current directory
@@ -226,7 +224,7 @@ Select query is the most common statement as well as the most complicated one. H
 Generally, we will have two types of select statemen – select from one table and select from multiple table. We have created corresponding method for the two case. So at first parser will be called and depending on the type different method will be called as shown below.
 
 
-```
+```java
 private void selectQuery(String stmt){ 
     try{
         // update select parser note
