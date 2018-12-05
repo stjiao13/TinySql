@@ -430,7 +430,6 @@ public class Join {
                 : numRealBlocks / numMemBlocks + 1;
         for(int i = 0; i < numSublists; i++){
             Phi.clearMainMemory();
-            // 这个内部循环似乎没用
             for (int j = 0; j < numMemBlocks; j++) {
                 int offset = i * numMemBlocks + j;
                 if (offset >= numRealBlocks) {

@@ -104,7 +104,7 @@ public class ExpressionTree {
 
     public TreeNode buildTree(String str){
         /*
-        construct expression tree according to grammars, +,-,*,/,(,)
+        construct expression tree according to grammars, +,-,*,/,(,),|,&,!
         * */
         if(str == null || str.length() == 0) return null;
 
@@ -264,11 +264,12 @@ public class ExpressionTree {
         return str.matches("\\d+");
     }
 
-    public String evaluate(Tuple tuple, TreeNode node){
-        /*
+    /**
         Evaluate input tuple whether satisfies the expression
         (expression tree rooted at input node)
-        * */
+     * **/
+    public String evaluate(Tuple tuple, TreeNode node){
+
         if(node == null) return null;
 
         String curOp = node.getValue();
