@@ -114,17 +114,18 @@ public class Join {
     /** Join two tables with where condition **/
     public String joinTwoTables(Main Phi, String table1, String table2,
                                 List<TreeNode> nodes, ExpressionTree expressionTree){
-        System.out.println("Join two tables: " + table1 +" and " + table2);
+        // System.out.println("Join two tables: " + table1 +" and " + table2);
         SchemaManager mngr = Phi.schemaManager;
         Relation relation1 = mngr.getRelation(table1);
         Relation relation2 = mngr.getRelation(table2);
         Schema schema3 = joinTwoSchema(table1, table2, relation1.getSchema(), relation2.getSchema());
-        System.out.println("new schema's fields: " + schema3.getNumOfFields());
+        //System.out.println("new schema's fields: " + schema3.getNumOfFields());
         // ie: "course_cross_course2"
         String table3 = table1 + "_cross_" + table2;
         // create an empty relation
         mngr.createRelation(table3, schema3);
         Relation relation3 = mngr.getRelation(table3);
+        //System.out.println("new relation: \n" + relation3);
         // create a new tuple
         Tuple tuple3 = relation3.createTuple();
         // read tuples from table1 and table2, join them then insert it into table3
@@ -155,14 +156,14 @@ public class Join {
 
     /** Join two tables **/
     public String joinTwoTables(Main Phi, String table1, String table2){
-        System.out.println("Join two tables: " + table1 +" and " + table2);
+        // System.out.println("Join two tables: " + table1 +" and " + table2);
         SchemaManager mngr = Phi.schemaManager;
         //System.out.println("cur manager has course2: " + mngr.relationExists("course2"));
         Relation relation1 = mngr.getRelation(table1);
         Relation relation2 = mngr.getRelation(table2);
         // join two schema
         Schema schema3 = joinTwoSchema(table1, table2, relation1.getSchema(), relation2.getSchema());
-        System.out.println("new schema's fields: " + schema3.getNumOfFields());
+        // System.out.println("new schema's fields: " + schema3.getNumOfFields());
         // ie: "course_cross_course2"
         String table3 = table1 + "_cross_" + table2;
         // a new empty relation
@@ -269,17 +270,24 @@ public class Join {
         if(table.contains("_cross_")) return true;
         Set<String> tableSet = new HashSet<>();
         for(TreeNode node:nodes){
+            // System.out.println("sub node: " + expressionTree.toString(node));
             tableSet = pushToWhich(node);
+            // System.out.println("table set: " + tableSet);
             if(tableSet.size() > 1) continue;
             if(tableSet.size() == 1){
                 if(!tableSet.iterator().next().equals(table)) continue;
-                return expressionTree.check(tuple, rmTableName(node));
+                // System.out.println("tuple: " + tuple);
+                TreeNode newNode = rmTableName(node);
+                // System.out.println("new node: " + expressionTree.toString(newNode));
+                //return expressionTree.check(tuple, rmTableName(node));
+                return expressionTree.check(tuple, newNode);
             }
         }
         return true;
     }
     /** Handle case: course.sid in sub node but only 'sid' in single table **/
     private TreeNode rmTableName(TreeNode node){
+        if(node == null) return null;
         // deep copy node
         TreeNode newNode = node.deepCopy();
         if(newNode.left == null || newNode.right == null) {
@@ -300,12 +308,17 @@ public class Join {
         if(node.left == null || node.right == null){
             // handle case: course.id
             if(node.value.contains(".")){
-                tableSet.add(node.getValue().split(".")[0]);
+                String val = node.getValue();
+                tableSet.add(node.getValue().split("\\.")[0]);
                 return tableSet;
             }
         }
-        tableSet.addAll(pushToWhich(node.left));
-        tableSet.addAll(pushToWhich(node.right));
+        if(node.left != null){
+            tableSet.addAll(pushToWhich(node.left));
+        }
+        if(node.right != null){
+            tableSet.addAll(pushToWhich(node.right));
+        }
         return tableSet;
     }
 
