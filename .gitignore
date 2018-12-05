@@ -9,3 +9,4 @@
 .DS_Store
 src/main/java/tinySql/experiment.java
 src/main/production/
+out/
