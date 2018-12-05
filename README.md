@@ -10,12 +10,14 @@ This project is to implement a Tiny-SQL interpreter.
 
 ---
 ## To start with
-1. Change directory to the one of the interface :
+1.Decompress out.zip to current directory
+
+2. Change current directory
 ```
 cd out/production/tinysql
 ```
 
-2. Run the interface class:
+3. Run the interface class:
 ```
 java main.java.tinySql.Interface
 ```
