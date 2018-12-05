@@ -30,7 +30,14 @@ java main.java.tinySql.Interface
 
 The user would either type a single sql statement or perform sql query on a text file with sql statements. User may also specify the filename of outputfileThis user-friendly interface makes user easier to implement sql statement using this program.
 
-Below is the snapshot of the interface of our program.
+Below is the screenshot of execute a file's statements.
+##### If there is an I/O error, please drag your test file into current director (out/production/tinysql)
+
+![command1](https://user-images.githubusercontent.com/36396754/49499196-f5c23980-f832-11e8-8c9b-62727fbe6673.jpeg)
+
+Here is another screenshot that directly typing sql statements.
+
+![command3](https://user-images.githubusercontent.com/36396754/49499290-328e3080-f833-11e8-9b66-3ff6a5d79e58.jpeg)
 
 ### Parser
 
@@ -40,22 +47,29 @@ The parser class accepts a tiny sql statement as input and then return a parse t
 
 ```java
 public class ParseTreeNode {
-// type = "DELECT" or "SELECT"
-public String type;
-// whether stmt contains "DISTINCT" public boolean distinct;
-// whether stmt contains "FROM"
-public boolean from;
-// whether stmt contains "WHERE"
-public boolean where;
-// whether stmt contains "order by" public boolean hasOrder;
-// order condition
-public String order_by;
-// public ExpressionTree search_condition; // use string to represent ExpressionTree public String search_condition;
-// attributes (columns)
-public List<String> attributes;
-// tables
-public List<String> tablelist;
-public ParseTreeNode parent; public ParseTreeNode child;
+    // type = "DELECT" or "SELECT"
+    public String type;
+    // whether stmt contains "DISTINCT"
+    public boolean distinct;
+    // whether stmt contains "FROM"
+    public boolean from;
+    // whether stmt contains "WHERE"
+    public boolean where;
+    // whether stmt contains "order by"
+    public boolean hasOrder;
+    // order condition
+    public String order_by;
+    // public ExpressionTree search_condition;
+    // use string to represent ExpressionTree
+    public String search_condition;
+    // attributes (columns)
+    public List<String> attributes;
+    // tables
+    public List<String> tablelist;
+
+    public ParseTreeNode parent;
+    public ParseTreeNode child;
+
 ```
 For the parseSelect method, we parse the input statement according to its type. As a typical sql select method could have many optional arguments, we need to deal with them with care. We need to judge if it is a select distinct statement as well as storing the attributes, tables and the search condition indicated by where.
 
@@ -70,8 +84,9 @@ For create operation, the corresponding parse tree node is defined as below:
 
 ```java
 public class CreateNode {
-public String table_name;
-public List<String[]> attribute_type_list;
+	      public String table_name;
+	      public List<String[]> attribute_type_list;
+
 ```
 
 Here, the value in attribute_type_list is the pair of name and type represented as string. Because create statement has no optional arguments, the parsing step is rather simple.
@@ -82,7 +97,7 @@ For drop operation, the corresponding parse tree node is defined as below:
 
 ```java
  public class DropNode { 
- String table_name;
+        String table_name;
 ```
 
 Like create operation, drop operation is very simple and will just need to store the table_name.
@@ -93,9 +108,10 @@ For insert operation, the corresponding parse tree node is defined as below:
 
 ```java
 public class InsertNode {
-public String table_name;
-public List<String> attribute_list;
-public List<String> value_list_without_select; public ParseTreeNode value_lst_with_select;
+       public String table_name;
+       public List<String> attribute_list;
+       public List<String> value_list_without_select; 
+       public ParseTreeNode value_lst_with_select;
 ```
 
 There are two types of insert statement. One is to insert plain values and another is to insert values coming from the result of a select statement. Therefore we store the value as list of string in the first case and we store the result of ParseTreeNode in the second case.
@@ -108,34 +124,44 @@ Expression Tree:
 ```java
 public class ExpressionTree { 
       public TreeNode root;
-      private Stack<String> operator; private Stack<TreeNode> operand;
-          // operator preference
+      private Stack<String> operator; 
+      private Stack<TreeNode> operand;
+      // operator preference stored in a hashmap
       private static final Map<String, Integer > preference; ....
 ```
 
 Evaluate a tuple:
 
 ```java
-public boolean check(Tuple tuple, TreeNode node){ 
-     return Boolean.parseBoolean(evaluate(tuple, node));
-}
-public String evaluate(Tuple tuple, TreeNode node){ 
-      /*
-      Evaluate input tuple whether satisfies the expression (expression tree rooted at input node)
-      * */
-       if(node == null) return null;
-               String curOp = node.getValue();
-               String leftOp, rightOp;
-               leftOp = evaluate(tuple, node.getLeft());
-               rightOp = evaluate(tuple, node.getRight());
-       if(curOp.equals("=")){ if(isInteger(leftOp)) {
-                       // are digits, compare values
-       return String.valueOf(Integer.parseInt(leftOp) == Integer.parseInt(rightOp));
-       } else {
-       // are strings, compare strings return
-       String.valueOf(leftOp.equalsIgnoreCase(rightOp));
-                   }
-       } ..........
+    public boolean check(Tuple tuple, TreeNode node){
+        return Boolean.parseBoolean(evaluate(tuple, node));
+    }
+
+    public String evaluate(Tuple tuple, TreeNode node){
+        /*
+        Evaluate input tuple whether satisfies the expression
+        (expression tree rooted at input node)
+        * */
+        if(node == null) return null;
+
+        String curOp = node.getValue();
+        String leftOp, rightOp;
+
+        leftOp = evaluate(tuple, node.getLeft());
+        rightOp = evaluate(tuple, node.getRight());
+
+        if(curOp.equals("=")){
+            if(isInteger(leftOp)) {
+                // are digits, compare values
+                return String.valueOf(Integer.parseInt(leftOp) == Integer.parseInt(rightOp));
+            } else {
+                // are strings, compare strings
+                return String.valueOf(leftOp.equalsIgnoreCase(rightOp));
+            }
+        }
+        
+        ..........
+
 ```
 
 ### Physical Query Plan
@@ -144,10 +170,10 @@ In the main class of tinysql, we realize physical query plan. The instance varia
 
 ```
 public class Main { Parser parser;
-    MainMemory mainMemory;
-    Disk disk;
-    SchemaManager schemaManager;
-    Join join;
+       MainMemory mainMemory;
+       Disk disk;
+       SchemaManager schemaManager;
+       Join join;
 ```
 
 Mainmemory, disk and schemaManger are the classes provided by storagemanager for realizing physical query plan. Join class is specific for join operations and will be discussed later.
@@ -156,23 +182,28 @@ Main object will call exec for single sql statement which is shown below.
 We could see that based on the type of the statement, specific query method will be called and we discuss them one by one.
 
 ```java
-public void exec(String stmt) { 
-/*
-Analyse query statement then do
-create/drop/insert/delete/select action
- * */
+public void exec(String stmt) {
+        /*
+        Analyse query statement then do create/drop/insert/delete/select action
+        * */
+        // remove duplicate spaces regex: "[\\s+]"
+        String action = stmt.trim().toLowerCase().split("\\s+")[0];
+        //System.out.println("Action: " + action);
+        if(action.equals("create")){
+            this.createQuery(stmt);
+        }else if(action.equals("drop")){
+            this.dropQuery(stmt);
+        }else if(action.equals("insert")){
+            this.insertQuery(stmt);
+        }else if(action.equals("delete")){
+            this.deleteQuery(stmt);
+        }else if(action.equals("select")){
+            this.selectQuery(stmt);
+        }else {
+            // throw exception
+        }
+    }
 
-       String action = stmt.trim().toLowerCase().split("\\s+")[0];
-               //System.out.println("Action: " + action);
-       if(action.equals("create")){ this.createQuery(stmt);
-       }else if(action.equals("drop")){ this.dropQuery(stmt);
-       }else if(action.equals("insert")){ this.insertQuery(stmt);
-       }else if(action.equals("delete")){ this.deleteQuery(stmt);
-       }else if(action.equals("select")){ this.selectQuery(stmt);
-       }else {
-       // throw exception
-       } 
-}
 ```
 
 #### Create Query
@@ -255,13 +286,16 @@ public class uniqueTuple implements Comparable<uniqueTuple>{
 
 Join tables couple by couple. A nested loop is used.
 
-```
+```java
 /** Cross Join tables with where condition**/
-public List<String> joinTables(Main Phi, List<String> tables, ExpressionTree expressionTree){
-TreeNode root = expressionTree.getRoot(); // sub conditions
-List<TreeNode> nodes = splitNode(root); String table1, table2, table3;
-List<String> tempTables = new ArrayList<>();
-...
+
+    public List<String> joinTables(Main Phi, List<String> tables, ExpressionTree expressionTree){
+        TreeNode root = expressionTree.getRoot();
+        // sub conditions
+        List<TreeNode> nodes = splitNode(root);
+        String table1, table2, table3;
+        List<String> tempTables = new ArrayList<>();
+	...
 ```
 
 ##### Natural join:
@@ -269,51 +303,76 @@ List<String> tempTables = new ArrayList<>();
 In this case, we apply two pass sort algorithm. The basic idea for the two pass algorithm is to first make sorted sublists and then merge the sorted sublists.
 To begin with, we need to define a heap class that allow us extract the minimum number efficiently. Our heap is implemented based binary heap and the basic structure of heap class is shown below:
 
-```
+```java
 public class Heap{
-public boolean isEmpty(){
-return lastIndex == 0; }
-public HeapNode peek(){ ...
-}
-public HeapNode poll(){ ...
-}
-public void insert(HeapNode node){ ...
-}
-public boolean delete(HeapNode node){ ...
-}
-public void swimUp(int pos){ ...
-}
-public void sinkDown(int pos){ }
+    public boolean isEmpty(){
+        return lastIndex == 0;
+    }
+
+    public HeapNode peek(){
+...
+    }
+    
+    public HeapNode poll(){
+...
+    }
+    
+    public void insert(HeapNode node){
+...
+    }
+    
+    public boolean delete(HeapNode node){
+...
+    }
+    
+    public void swimUp(int pos){
+...
+    }
+
+    public void sinkDown(int pos){
+    }
+
 ```
 Then we need to implement the twoPassSort method which sort all tuples in a relation base a list of sort fields. For this method, we first sort sublists with collections. Then we construct a heap with all main memory tuples. After that we push back all tuples in the heap to memory and then write to disk. We keep doing so for the remaining sublists and finished the first step. For the second step, we make a class called TupleWithBlockId and construct a heap based on it. Last, we poll the tuple from the heap to the memory and then write back to disk.
 We also define a RelationIterator class within the join class. The purpose of the iterator is to act as two pointers for the sorted blocks of the two tables. When we are comparing tuples, we could move the pointer right if any of the blocks is exhauseted.
 Lastly a naturalJoinTwoTables method is implemented within the join class. This method will first two pass sort the two relations. Then use two RelationIterators to find the natural join result.
 
-```
+```java
 public class Join {
-public boolean isNaturalJoin(TreeNode expressionTreeNode){
-...
-private void twoPassSort(Main Phi, Relation relation, List<String> sortFields){
-int numRealBlocks = relation.getNumOfBlocks();
-int numMemBlocks = Phi.mainMemory.getMemorySize(); ...
+
+    public boolean isNaturalJoin(TreeNode expressionTreeNode){
+    ...
+
+    private void twoPassSort(Main Phi, Relation relation, List<String> sortFields){
+        int numRealBlocks = relation.getNumOfBlocks();
+        int numMemBlocks = Phi.mainMemory.getMemorySize();
+    ...
        // initialize a heap
-Heap heap = new Heap(10000, comp); int count = 0;
-for (int k = 0; k < numMemBlocks ; k++) {
-Block block = Phi.mainMemory.getBlock(k);
-if (!block.isEmpty() && block.getNumTuples() > 0) {
-} }
-for (Tuple tuple : block.getTuples()) { if (tuple.isNull()) {
-continue; }
-count ++;
-heap.insert(new HeapNode(count, tuple)); }
+       Heap heap = new Heap(10000, comp);
+            int count = 0;
+            for (int k = 0; k < numMemBlocks ; k++) {
+                Block block = Phi.mainMemory.getBlock(k);
+                if (!block.isEmpty() && block.getNumTuples() > 0) {
+                    for (Tuple tuple : block.getTuples()) {
+                        if (tuple.isNull()) {
+                            continue;
+                        }
+                        count ++;
+                        heap.insert(new HeapNode(count, tuple));
+                    }
+                }
+            }
             Phi.clearMainMemory();
             // Begin Heap Sort
             ......
+      
            // merge sorted sublists
-int[] numTuplesRemainInBlock = new int[numSublists];
-Comparator<TupleWithBlockId> tuplewithBlockIdComp = new Comparator<TupleWithBlockId>() {
-@Override
-....
+          int[] numTuplesRemainInBlock = new int[numSublists];
+          Comparator<TupleWithBlockId> tuplewithBlockIdComp = new Comparator<TupleWithBlockId>() {
+            @Override
+            ....
+
+
 ```
 
 ## Optimization
@@ -323,24 +382,35 @@ We have two major optimizations in this project. The first is to optimize the se
 ### Optimize select operation
 For select operation, a practical tragedy to split nodes whenever possible so that we could apply select operation early thus reduce the number of tuples. In join class, we have a method splitNode to split nodes if possible as shown below:
 
-```
+```java
 /** Helper function: split nodes **/
-private List<TreeNode> splitNode(TreeNode node){ List<TreeNode> nodes = new ArrayList<>(); if(!"&|".contains(node.getValue())){
-nodes.add(node); }else{
-        nodes.addAll(splitNode(node.left));
-        nodes.addAll(splitNode(node.right));
+    private List<TreeNode> splitNode(TreeNode node){
+        List<TreeNode> nodes = new ArrayList<>();
+        if(!"&|".contains(node.getValue())){
+            nodes.add(node);
+        }else{
+            nodes.addAll(splitNode(node.left));
+            nodes.addAll(splitNode(node.right));
+        }
+        return nodes;
     }
-return nodes; }
+
+
 ```
 
 Then this method will be called when we are going to join tables as shown below:
 
-```
+```java
 public List<String> joinTables(Main Phi, List<String> tables, ExpressionTree expressionTree){
-TreeNode root = expressionTree.getRoot(); // sub conditions
-List<TreeNode> nodes = splitNode(root); String table1, table2, table3;
-List<String> tempTables = new ArrayList<>(); int index = 0;
-for(; index < tables.size(); index ++){ ......
+        TreeNode root = expressionTree.getRoot();
+        // sub conditions
+        List<TreeNode> nodes = splitNode(root);
+        String table1, table2, table3;
+        List<String> tempTables = new ArrayList<>();
+        int index = 0;
+        for(; index < tables.size(); index ++){
+	 ……
+
 ```
 
 ## Experiment and results
@@ -369,4 +439,16 @@ INSERT INTO course (sid, homework, project, exam, grade) VALUES (3, 100, 69, 64,
 ```
 
 The sql statements below are adapted from the given test. And we test the disk IO / running time from 12 to 200.
+
+![diskio](https://user-images.githubusercontent.com/36396754/49499857-d1675c80-f834-11e8-9e19-6cd808dee50d.png)
+
+Then we test the performance specially for different type of sql statement. The table below shows example for each type.
+
+
+<img width="707" alt="performance1" src="https://user-images.githubusercontent.com/36396754/49499958-1c816f80-f835-11e8-9dcc-94042778bc9d.png">
+
+And the corresponding average Disk IO and the running time are shown below.
+
+<img width="700" alt="performance2" src="https://user-images.githubusercontent.com/36396754/49499981-286d3180-f835-11e8-9aba-a2b7818da349.png">
+
 
