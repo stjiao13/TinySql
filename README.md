@@ -12,7 +12,7 @@ This project report will give brief explanation of the software architecture of 
 ---
 ## To start with
 
-1. Decompress out.zip to current directory
+1. If you already have a out folder(eg If you are grader and you directly unzip the file),skip this step. Else decompress out.zip to current directory
 
 2. Change current directory
 ```
