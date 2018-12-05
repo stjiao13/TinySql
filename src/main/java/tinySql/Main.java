@@ -386,14 +386,17 @@ public class Main {
         }
     }
 
-    /** Select multiple talbes:
-     *  first cross join tables then use select the joined table **/
+    /** Select multiple talbes **/
     private void selectQuery2(){
         List<String> tableList = parser.selectNode.getTablelist();
         List<String> tempTables = new ArrayList<>();
         if(parser.selectNode.isWhere()){
+            //System.out.println("multi table with where: " + tableList);
             ExpressionTree tree = new ExpressionTree(parser.selectNode.search_condition);
-           tempTables = join.joinTables(this, tableList, tree);
+            //System.out.println("tree: " + tree.toString(tree.getRoot()));
+            clearMainMemory();
+            tempTables = join.joinTables(this, tableList, tree);
+            // System.out.println("new tables: " + tempTables);
         }else{
             //System.out.println("query2 table list: " + tableList);
             tempTables = join.joinTables(this, tableList);
@@ -446,8 +449,6 @@ public class Main {
                 show(parser.selectNode, relation, selectedFieldNames);
                 return;
             }
-
-            // TODO: single table one pass and two pass optimization
 
             for(int i = 0; i < relationBlockNum; i++){
                 // reads ONE block from the relation (the disk) and
